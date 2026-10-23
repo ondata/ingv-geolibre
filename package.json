@@ -1,6 +1,6 @@
 {
   "name": "ingv-geolibre",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "GeoLibre plugin to search the INGV earthquake catalogue and show the events on the map",
   "type": "module",
