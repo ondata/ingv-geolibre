@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+dist
+dist-ssr
+*.local
+geolibre-plugin/dist/
+geolibre-plugin/*.zip
+geolibre-plugin-dev/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+coverage
+
+# Build
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.vite/
+
+# Local test material
+tmp/
+
+# Internal work plans
+tasks/

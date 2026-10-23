@@ -1,0 +1,48 @@
+{
+  "name": "ingv-geolibre",
+  "version": "0.0.0",
+  "private": true,
+  "description": "GeoLibre plugin to search the INGV earthquake catalogue and show the events on the map",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:geolibre",
+    "build:geolibre": "vite build --config vite.geolibre.config.ts",
+    "package:geolibre": "npm run build:geolibre && node scripts/package-geolibre-plugin.mjs",
+    "install:geolibre": "npm run build:geolibre && node scripts/install-geolibre-plugin.mjs",
+    "build:geolibre:dev": "vite build --config vite.geolibre.config.ts --mode dev",
+    "install:geolibre:dev": "npm run build:geolibre:dev && node scripts/install-geolibre-plugin.mjs --bundle geolibre-plugin-dev",
+    "serve:geolibre": "node scripts/serve-geolibre-plugin.mjs",
+    "test": "vitest --run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,css}\""
+  },
+  "keywords": [
+    "geolibre",
+    "maplibre",
+    "ingv",
+    "earthquakes",
+    "fdsn",
+    "plugin"
+  ],
+  "author": "ondata",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ondata/ingv-geolibre.git"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.2",
+    "@vitest/ui": "^4.1.11",
+    "eslint": "^10.4.1",
+    "globals": "^17.6.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.11"
+  }
+}
