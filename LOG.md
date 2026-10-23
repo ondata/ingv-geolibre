@@ -2,6 +2,7 @@
 
 ## 2026-10-23
 
+- **0.2.0 released** with share links (zip sha256 `2f5d539a2b6ea57e14aba7afd3c291e74868206732e46de98a1f6cbc8427b354`, checked on the download). Registry PR opengeos/geolibre-plugins#121 updated to 0.2.0 (entry, title, description); `npm run validate` and pre-commit pass locally.
 - **Share links**: Share button (panel footer and event detail) gives `https://web.geolibre.app/?plugin=ingv-geolibre&ingv…`; `src/ingv/url-params.ts` reads and writes 15 `ingv*` parameters, only the non-default ones. "Map view" carries the searched box and the recipient searches that exact box; preset periods stay relative; `ingvEvent` opens the detail, fetched by `eventid=` when not in the search. Checked headed on web.geolibre.app: Greece link, box + event link, links copied from the panel. 37 tests.
 - **Minimap ratio**: fixed in GeoLibre (`zoomOffset: -4` in `packages/plugins/src/plugins/components/minimap.ts`), no setting and no plugin API. Asked in a comment on opengeos/GeoLibre#3188 for a `zoomOffset` option or a user setting.
 
