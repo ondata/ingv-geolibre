@@ -14,6 +14,8 @@ export const PLUGIN_VERSION = "0.0.0";
 
 /** Right-panel id, unique across plugins. */
 export const PANEL_ID = `${PLUGIN_ID}-search`;
+/** Floating panel of the results table. */
+export const TABLE_ID = `${PLUGIN_ID}-results`;
 
 /** INGV FDSN event web service. */
 export const FDSN_EVENT_URL = "https://webservices.ingv.it/fdsnws/event/1/query";

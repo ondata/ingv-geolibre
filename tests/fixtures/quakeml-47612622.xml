@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='utf-8'?>
+<q:quakeml xmlns="http://quakeml.org/xmlns/bed/1.2" xmlns:ns2="http://webservices.ingv.it/" xmlns:q="http://quakeml.org/xmlns/quakeml/1.2">
+  <eventParameters publicID="smi:webservices.ingv.it/fdsnws/event/1/query">
+    <event publicID="smi:webservices.ingv.it/fdsnws/event/1/query?eventId=47612622">
+      <type>earthquake</type>
+      <preferredMagnitudeID>smi:webservices.ingv.it/fdsnws/event/1/query?magnitudeId=159756611</preferredMagnitudeID>
+      <preferredOriginID>smi:webservices.ingv.it/fdsnws/event/1/query?originId=148204111</preferredOriginID>
+      <origin publicID="smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203431">
+        <evaluationMode>automatic</evaluationMode>
+        <time>
+          <value>2026-10-23T15:32:11.500000</value>
+        </time>
+        <depth>
+          <value>23350</value>
+        </depth>
+        <evaluationStatus>preliminary</evaluationStatus>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_EQASSEMBLE</author>
+          <version>0</version>
+          <creationTime>2026-10-23T15:32:39</creationTime>
+          <ns2:quality>AD</ns2:quality>
+        </creationInfo>
+      </origin>
+      <origin publicID="smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203461">
+        <evaluationMode>automatic</evaluationMode>
+        <time>
+          <value>2026-10-23T15:32:11.610000</value>
+        </time>
+        <depth>
+          <value>22730</value>
+        </depth>
+        <evaluationStatus>preliminary</evaluationStatus>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_EQASSEMBLE</author>
+          <version>1</version>
+          <creationTime>2026-10-23T15:32:48</creationTime>
+          <ns2:quality>AD</ns2:quality>
+        </creationInfo>
+      </origin>
+      <origin publicID="smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203521">
+        <evaluationMode>automatic</evaluationMode>
+        <time>
+          <value>2026-10-23T15:32:11.800000</value>
+        </time>
+        <depth>
+          <value>7440</value>
+        </depth>
+        <evaluationStatus>preliminary</evaluationStatus>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_EQASSEMBLE</author>
+          <version>2</version>
+          <creationTime>2026-10-23T15:35:27</creationTime>
+          <ns2:quality>CC</ns2:quality>
+        </creationInfo>
+      </origin>
+      <origin publicID="smi:webservices.ingv.it/fdsnws/event/1/query?originId=148204111">
+        <evaluationMode>manual</evaluationMode>
+        <time>
+          <value>2026-10-23T15:32:10.470000</value>
+          <uncertainty>0.34</uncertainty>
+        </time>
+        <depth>
+          <value>7400</value>
+          <uncertainty>2200</uncertainty>
+        </depth>
+        <evaluationStatus>reviewed</evaluationStatus>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>SURVEY-INGV</author>
+          <version>100</version>
+          <creationTime>2026-10-23T15:46:38</creationTime>
+          <ns2:quality>BC</ns2:quality>
+          <ns2:doi>https://doi.org/10.13127/ISIDE</ns2:doi>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:webservices.ingv.it/fdsnws/event/1/query?magnitudeId=159756611">
+        <originID>smi:webservices.ingv.it/fdsnws/event/1/query?originId=148204111</originID>
+        <type>ML</type>
+        <mag>
+          <value>4.1</value>
+          <uncertainty>0.5</uncertainty>
+        </mag>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>SURVEY-INGV</author>
+          <creationTime>2026-10-23T15:46:37</creationTime>
+          <ns2:mag_quality>AD</ns2:mag_quality>
+        </creationInfo>
+        </magnitude>
+      <magnitude publicID="smi:webservices.ingv.it/fdsnws/event/1/query?magnitudeId=159755801">
+        <originID>smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203431</originID>
+        <type>ML</type>
+        <mag>
+          <value>4.8</value>
+          <uncertainty>0.2</uncertainty>
+        </mag>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_LOCALMAG_PREL</author>
+          <creationTime>2026-10-23T15:33:22</creationTime>
+          <ns2:mag_quality>C</ns2:mag_quality>
+        </creationInfo>
+        </magnitude>
+      <magnitude publicID="smi:webservices.ingv.it/fdsnws/event/1/query?magnitudeId=159755901">
+        <originID>smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203521</originID>
+        <type>ML</type>
+        <mag>
+          <value>4.2</value>
+          <uncertainty>0.6</uncertainty>
+        </mag>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_LOCALMAG_FINAL</author>
+          <creationTime>2026-10-23T15:35:51</creationTime>
+          <ns2:mag_quality>A</ns2:mag_quality>
+        </creationInfo>
+        </magnitude>
+      <magnitude publicID="smi:webservices.ingv.it/fdsnws/event/1/query?magnitudeId=159755821">
+        <originID>smi:webservices.ingv.it/fdsnws/event/1/query?originId=148203461</originID>
+        <type>ML</type>
+        <mag>
+          <value>4.7</value>
+          <uncertainty>0.3</uncertainty>
+        </mag>
+        <creationInfo>
+          <agencyID>INGV</agencyID>
+          <author>hew1#MOD_LOCALMAG_RAPID</author>
+          <creationTime>2026-10-23T15:34:01</creationTime>
+          <ns2:mag_quality>A</ns2:mag_quality>
+        </creationInfo>
+        </magnitude>
+      </event>
+  </eventParameters>
+</q:quakeml>
