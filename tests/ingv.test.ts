@@ -8,7 +8,7 @@ import { ResultsLayer } from "../src/ingv/results-layer";
 import type { MapLike } from "../src/ingv/host";
 import { buildQueryUrl, fdsnTime } from "../src/ingv/query";
 import { COUNTRIES, matchCountries } from "../src/ingv/countries";
-import { defaultSearch, eventsBbox, filterOf, sortEvents } from "../src/ingv/controller";
+import { Controller, defaultSearch, depthRanges, depthShown, eventsBbox, filterOf, filtersOf, orderEvents, sameBox, sortEvents } from "../src/ingv/controller";
 import { depthColor } from "../src/ingv/layer";
 import { formatDelay, parseHistory } from "../src/ingv/products";
 import { toCsv } from "../src/ingv/format";
@@ -47,14 +47,21 @@ describe("query", () => {
     // Handles at the ends of their scales set no limit.
     const open = filterOf({ ...base, magnitude: [0, 8], depth: [0, 700], area: "world" }, now, [0, 0, 1, 1]);
     expect(open).toMatchObject({ orderBy: "time", limit: 1000 });
-    expect(open.minMagnitude ?? open.maxMagnitude ?? open.minDepth ?? open.maxDepth ?? open.bbox ?? open.circle).toBeUndefined();
+    expect(open.minMagnitude ?? open.maxMagnitude ?? open.bbox ?? open.circle).toBeUndefined();
+    const [one] = filtersOf({ ...base, magnitude: [0, 8], depth: [0, 700], area: "world" }, now, null);
+    expect(one.minDepth ?? one.maxDepth).toBeUndefined();
     const italy = COUNTRIES.find((c) => c.code === "IT")!;
-    const narrow = filterOf({ ...base, magnitude: [3, 5.5], depth: [10, 100], area: "country", country: italy }, now, null);
-    expect(narrow).toMatchObject({ minMagnitude: 3, maxMagnitude: 5.5, minDepth: 10, maxDepth: 100, bbox: [6.75, 36.62, 18.48, 47.12] });
+    const narrow = filtersOf({ ...base, magnitude: [3, 5.5], depth: [10, 100], area: "country", country: italy }, now, null);
+    expect(narrow).toHaveLength(1);
+    expect(narrow[0]).toMatchObject({ minMagnitude: 3, maxMagnitude: 5.5, minDepth: 10, maxDepth: 100, bbox: [6.75, 36.62, 18.48, 47.12] });
     const around = filterOf({ ...base, area: "around", centre: { lat: 38.2, lon: 15.6 }, radiusKm: 30 }, now, null);
     expect(params(buildQueryUrl(around))).toMatchObject({ latitude: "38.2", longitude: "15.6", maxradiuskm: "30" });
-    const custom = filterOf({ ...base, time: "custom", from: "2026-10-01", to: "2026-10-23" }, now, null);
-    expect(params(buildQueryUrl(custom))).toMatchObject({ starttime: "2026-10-01T00:00:00", endtime: "2026-10-24T00:00:00" });
+    // Custom times are local: the query carries them in UTC.
+    const custom = filterOf({ ...base, time: "custom", from: "2026-10-01T08:30", to: "2026-10-23T20:34" }, now, null);
+    expect(params(buildQueryUrl(custom))).toMatchObject({
+      starttime: fdsnTime(new Date(2026, 9, 1, 8, 30)),
+      endtime: fdsnTime(new Date(2026, 9, 23, 20, 34)),
+    });
   });
 
   it("sends every filter it is given", () => {
@@ -276,5 +283,84 @@ describe("results layer", () => {
     tool = true;
     click({ features: [{ properties: { eventId: 47600972 } }] });
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("live zoom", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the searched box while the view is the one live zoom left", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
+    let view: [number, number, number, number] = [6, 36, 19, 47.5];
+    let moveend: (() => void) | null = null;
+    const map = { once: (_: string, cb: () => void) => (moveend = cb), flyTo: vi.fn(), getCenter: () => ({ lng: 12, lat: 42 }) };
+    const app = {
+      addGeoJsonLayer: vi.fn(),
+      getViewBounds: () => view,
+      getMap: () => map,
+      fitBounds: vi.fn((b: [number, number, number, number]) => (view = b)),
+    } as unknown as IngvHost;
+    const ctl = new Controller(app);
+    // No results layer in this test: the map stub has no MapLibre style.
+    (ctl as unknown as { resultsLayer: () => null }).resultsLayer = () => null;
+    ctl.update({ liveZoom: true });
+    await ctl.run();
+    expect(app.fitBounds).toHaveBeenCalledTimes(1);
+    moveend!();
+    await ctl.run();
+    const url = String(vi.mocked(fetch).mock.calls[1][0]);
+    // The second search uses the first box, not the fitted view.
+    expect(new URL(url).searchParams.get("minlongitude")).toBe("6");
+    expect(sameBox(view, [6, 36, 19, 47.5])).toBe(false);
+  });
+});
+
+describe("depth classes", () => {
+  const base = defaultSearch(new Date("2026-10-23T12:00:00Z"));
+  const on = (...flags: number[]) => [0, 1, 2, 3].map((i) => flags.includes(i));
+
+  it("joins contiguous classes into one request", () => {
+    expect(depthRanges(base)).toEqual([[-Infinity, Infinity]]);
+    expect(depthRanges({ ...base, depthOn: on(0, 1) })).toEqual([[-Infinity, 30]]);
+    expect(depthRanges({ ...base, depthOn: on(1, 2) })).toEqual([[10, 100]]);
+  });
+
+  it("asks one request per run of classes, cut to the slider", () => {
+    expect(depthRanges({ ...base, depthOn: on(0, 3) })).toEqual([[-Infinity, 10], [100, Infinity]]);
+    expect(depthRanges({ ...base, depthOn: on(0, 3), depth: [5, 300] })).toEqual([[5, 10], [100, 300]]);
+    expect(depthRanges({ ...base, depthOn: on(3), depth: [0, 50] })).toEqual([]);
+    expect(depthRanges({ ...base, depthOn: on() })).toEqual([]);
+  });
+
+  it("keeps an event in its own class only", () => {
+    const s = { ...base, depthOn: on(0) };
+    expect([depthShown(s, -1), depthShown(s, 9.9), depthShown(s, 10)]).toEqual([true, true, false]);
+  });
+
+  it("orders merged results as the service does", () => {
+    const features = normalizeEvents(fixture).features;
+    expect(orderEvents(features, "magnitude").map((f) => f.properties.mag)).toEqual([7, 3.1, 2.4]);
+    expect(orderEvents(features, "magnitude-asc").map((f) => f.properties.mag)).toEqual([2.4, 3.1, 7]);
+  });
+});
+
+describe("hidden depth classes", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("counts what the classes turned off hide", async () => {
+    // The fixture's depths are 5.5, 25.4 and 9 km: all in the two shallow classes.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
+    const app = { addGeoJsonLayer: vi.fn(), getViewBounds: () => null } as unknown as IngvHost;
+    const ctl = new Controller(app);
+    ctl.search = { ...ctl.search, depthOn: [false, false, true, true] };
+    await ctl.run();
+    expect(ctl.state.events!.features).toHaveLength(0);
+    expect(ctl.hiddenNote()).toBe("3 in hidden depth classes");
+    // With every class on there is nothing hidden, and no second request.
+    vi.mocked(fetch).mockClear();
+    ctl.search = { ...ctl.search, depthOn: [true, true, true, true] };
+    await ctl.run();
+    expect(ctl.hiddenNote()).toBe("");
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

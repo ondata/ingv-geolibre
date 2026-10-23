@@ -62,6 +62,7 @@ export function renderTable(ctl: Controller, container: HTMLElement): () => void
     });
     // Rows are rebuilt only when the events or their order change; marks follow the state.
     if (drawn.events !== events || drawn.sort !== sort) {
+      const note = ctl.hiddenNote();
       drawn = { events, sort };
       body.replaceChildren(
         ...(features.length
@@ -84,7 +85,7 @@ export function renderTable(ctl: Controller, container: HTMLElement): () => void
               row.dataset.id = String(p.eventId);
               return row;
             })
-          : [el("div", { class: "ingq-empty" }, "No earthquakes for these filters.")]),
+          : [el("div", { class: "ingq-empty" }, `No earthquakes for these filters.${note ? ` ${note[0].toUpperCase()}${note.slice(1)}.` : ""}`)]),
       );
     }
     const selectedId = view === "detail" ? selected?.properties.eventId : undefined;

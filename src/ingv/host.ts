@@ -5,6 +5,7 @@ import type { Bbox } from "./query";
 export interface MapLike {
   on(type: string, listener: (event: never) => void): void;
   on(type: string, layerId: string, listener: (event: never) => void): void;
+  once(type: string, listener: () => void): void;
   off(type: string, listener: (event: never) => void): void;
   off(type: string, layerId: string, listener: (event: never) => void): void;
   flyTo(options: { center: [number, number]; zoom?: number }): void;

@@ -59,9 +59,20 @@ function buildSearch(ctl: Controller) {
   const chips = [...TIME_PRESETS.map((p) => ({ id: p.id as TimePresetId, label: p.label })), { id: "custom" as const, label: "Custom" }].map((p) =>
     el("button", { type: "button", class: "ingq-chip", onclick: () => ctl.set({ time: p.id }, p.id !== "custom") }, p.label),
   );
-  const from = el("input", { type: "date", class: "ingq-input", onchange: () => ctl.set({ from: from.value }) });
-  const to = el("input", { type: "date", class: "ingq-input", onchange: () => ctl.set({ to: to.value }) });
-  const custom = el("div", { class: "ingq-custom" }, from, el("span", {}, "to"), to);
+  const from = el("input", { type: "datetime-local", step: "60", class: "ingq-input ingq-mono", onchange: () => from.value && ctl.set({ from: from.value }) });
+  const to = el("input", { type: "datetime-local", step: "60", class: "ingq-input ingq-mono", onchange: () => to.value && ctl.set({ to: to.value }) });
+  const offset = -new Date().getTimezoneOffset() / 60;
+  const zone = `UTC${offset >= 0 ? "+" : "-"}${Math.abs(offset)}`;
+  const custom = el(
+    "div",
+    { class: "ingq-custom" },
+    el("span", {}, "From"),
+    from,
+    el("span", {}, "To"),
+    to,
+    el("span", {}),
+    el("span", { class: "ingq-faint ingq-note" }, `Local time (${zone}). INGV is queried in UTC.`),
+  );
   const time = el("div", { class: "ingq-group" }, sectionTitle("Time"), el("div", { class: "ingq-chips" }, ...chips), custom);
 
   // Magnitude
@@ -133,8 +144,20 @@ function buildSearch(ctl: Controller) {
     "div",
     { class: "ingq-legend" },
     el("span", {}, "Depth"),
-    ...DEPTH_CLASSES.map((c) => el("span", { class: "ingq-legend-item" }, dot(c.color), c.label)),
+    ...DEPTH_CLASSES.map((c, i) =>
+      el(
+        "button",
+        {
+          type: "button",
+          class: "ingq-depth",
+          onclick: () => ctl.set({ depthOn: ctl.search.depthOn.map((on, k) => (k === i ? !on : on)) }),
+        },
+        dot(c.color),
+        c.label,
+      ),
+    ),
   );
+  const depthButtons = [...legend.querySelectorAll<HTMLButtonElement>(".ingq-depth")];
   const searchButton = el("button", { type: "button", class: "ingq-primary", onclick: () => void ctl.run() }, "Search");
   const result = el(
     "div",
@@ -171,7 +194,16 @@ function buildSearch(ctl: Controller) {
   const moreToggle = el("button", { type: "button", class: "ingq-disclosure", onclick: () => ((moreOpen = !moreOpen), refresh()) }, moreChev, "More filters");
   const more = el("div", { class: "ingq-more" }, moreToggle, moreBody);
 
-  const element = el("div", { class: "ingq-search" }, time, magnitude, area, result, more, credit());
+  const live = el("input", { type: "checkbox", class: "ingq-check", onchange: () => ctl.setLiveZoom(live.checked) });
+  const liveRow = el(
+    "label",
+    { class: "ingq-live", title: "Fit the map to the results every time a filter changes" },
+    live,
+    el("span", {}, "Live zoom"),
+    el("span", { class: "ingq-faint" }, "fit map to results on every filter change"),
+  );
+
+  const element = el("div", { class: "ingq-search" }, liveRow, time, magnitude, area, result, more, credit());
 
   // Click on the map moves the centre of "Around".
   const map = ctl.app.getMap?.();
@@ -188,6 +220,10 @@ function buildSearch(ctl: Controller) {
     custom.hidden = s.time !== "custom";
     from.value = s.from;
     to.value = s.to;
+    depthButtons.forEach((b, i) => {
+      b.classList.toggle("ingq-off", !s.depthOn[i]);
+      b.title = s.depthOn[i] ? "Hide" : "Show";
+    });
     magSlider.set(s.magnitude);
     magLo.value = String(s.magnitude[0]);
     magHi.value = String(s.magnitude[1]);
@@ -217,7 +253,9 @@ function buildSearch(ctl: Controller) {
       const n = features.length;
       count.textContent = n ? `${n.toLocaleString("en")} ${n === 1 ? "earthquake" : "earthquakes"}` : "No earthquakes";
       const top = n ? Math.max(...features.map((f) => f.properties.mag)) : null;
-      strongest.textContent = top !== null ? `, strongest M\u00a0${formatMagnitude(top)}` : "";
+      const hiddenNote = ctl.hiddenNote();
+      strongest.textContent =
+        (top !== null ? `, strongest M\u00a0${formatMagnitude(top)}` : "") + (hiddenNote ? (n ? `; ${hiddenNote}` : ` (${hiddenNote})`) : "");
       message.textContent = n >= s.limit ? `The limit of ${s.limit} was reached: narrow the search or raise the limit.` : "";
     } else {
       count.textContent = "";
@@ -225,7 +263,8 @@ function buildSearch(ctl: Controller) {
       message.textContent = st.message;
     }
     message.hidden = !message.textContent;
-    zoomLink.hidden = st.status !== "done" || !features.length;
+    live.checked = st.liveZoom;
+    zoomLink.hidden = st.liveZoom || st.status !== "done" || !features.length;
     tableLink.hidden = st.tableOpen || !features.length;
   }
 
