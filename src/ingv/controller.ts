@@ -3,8 +3,10 @@ import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
+import type { Link, Shared } from "./url-params";
 import {
   buildQueryUrl,
+  eventQueryUrl,
   DEFAULT_LIMIT,
   DEFAULT_MAGNITUDE,
   DEFAULT_TIME,
@@ -189,13 +191,15 @@ export class Controller {
   };
   private listeners = new Set<() => void>();
   private results: ResultsLayer | null = null;
-  /** The map view a live zoom left, and the box searched before it. */
-  private liveFit: { view: Bbox; searched: Bbox | null } | null = null;
+  /** The map view a live zoom or a link left, and the box searched before it; no view: the next move sets it. */
+  private liveFit: { view: Bbox | null; searched: Bbox | null } | null = null;
   private running: AbortController | null = null;
   /** The panel's root, set by `renderPanel`: on a phone it covers part of the map. */
   panelElement: HTMLElement | null = null;
   /** The centre the last "Around" search used; the panel shows it. */
   usedCentre: SearchState["centre"] = null;
+  /** The box the last "Map view" search used; a shared link carries it. */
+  usedBox: Bbox | null = null;
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
   openTable: () => void = () => {};
   closeTable: () => void = () => {};
@@ -234,6 +238,7 @@ export class Controller {
     this.update({ status: "loading", message: "Searching…" });
     try {
       const view = this.searchedView();
+      this.usedBox = this.search.area === "view" ? view : null;
       const now = new Date();
       const shown = { ...this.search, centre: this.aroundCentre() };
       // The hidden classes are asked too, so an empty result can say what the legend hides.
@@ -321,7 +326,7 @@ export class Controller {
    */
   private searchedView(): Bbox | null {
     const view = this.app.getViewBounds?.() ?? null;
-    if (this.state.liveZoom && this.liveFit && view && sameBox(view, this.liveFit.view)) return this.liveFit.searched;
+    if (this.liveFit && (!this.liveFit.view || (view && sameBox(view, this.liveFit.view)))) return this.liveFit.searched;
     this.liveFit = null;
     return view;
   }
@@ -348,6 +353,54 @@ export class Controller {
       if (view) this.liveFit = { view, searched };
     });
     this.zoomToResults();
+  }
+
+  /**
+   * Follow a shared link: its search instead of the one on screen, its box
+   * searched as it is until the map moves (a screen of another shape shows
+   * more around it), then its event.
+   */
+  async followLink(link: Link) {
+    this.search = link.search;
+    this.state = { ...this.state, view: "search", selected: null, liveZoom: link.liveZoom ?? this.state.liveZoom };
+    this.liveFit = link.box ? { view: null, searched: link.box } : null;
+    await this.run();
+    // Live zoom has moved the map to the results; else the map goes to the box.
+    if (link.box && !(this.state.liveZoom && this.state.events?.features.length)) {
+      this.app.getMap?.()?.once("moveend", () => {
+        if (this.liveFit) this.liveFit.view = this.app.getViewBounds?.() ?? null;
+      });
+      this.app.fitBounds?.(link.box);
+    }
+    if (link.eventId) await this.openEvent(link.eventId);
+  }
+
+  /** Open an event by id: from the search when it is there, else from the service. */
+  async openEvent(eventId: number) {
+    let feature = this.state.events?.features.find((f) => f.properties.eventId === eventId);
+    if (!feature) {
+      try {
+        feature = (await fetchEvents(eventQueryUrl(eventId))).features[0];
+      } catch {
+        // Not found or no answer: the search stays on screen.
+      }
+    }
+    if (feature) this.select(feature);
+    else this.update({ message: `Event ${eventId} not found in the INGV catalogue.` });
+  }
+
+  /** What a shared link gives of the panel and the map now. */
+  shared(): Shared {
+    const map = this.app.getMap?.();
+    const centre = map?.getCenter();
+    return {
+      search: this.search,
+      box: this.usedBox,
+      centre: this.usedCentre,
+      eventId: this.state.view === "detail" ? (this.state.selected?.properties.eventId ?? null) : null,
+      liveZoom: this.state.liveZoom,
+      view: map && centre ? { lon: centre.lng, lat: centre.lat, zoom: map.getZoom() } : null,
+    };
   }
 
   setLiveZoom(on: boolean) {

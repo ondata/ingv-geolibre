@@ -4,6 +4,7 @@ import { Controller } from "./ingv/controller";
 import type { IngvHost } from "./ingv/host";
 import { renderPanel } from "./ingv/panel";
 import { renderTable } from "./ingv/table";
+import { linkFrom, URL_PARAMETER_NAMES } from "./ingv/url-params";
 import "./ingv/panel.css";
 
 /**
@@ -21,12 +22,17 @@ type Plugin = GeoLibrePlugin & {
 };
 
 let disposePanel: (() => void) | null = null;
+let activeCtl: Controller | null = null;
+/** The link already followed: GeoLibre gives its parameters again at every project it opens. */
+let followedLink: string | null = null;
 
 export const plugin: Plugin = {
   id: PLUGIN_ID,
   name: PLUGIN_NAME,
   version: PLUGIN_VERSION,
   engines: ["maplibre"],
+  // `?ingvTime=24h&ingvArea=world…` in a GeoLibre link: the panel's Share button writes them.
+  urlParameterNames: URL_PARAMETER_NAMES,
   activate(app) {
     if (!app.registerRightPanel) return false;
     const host = app as IngvHost;
@@ -60,12 +66,22 @@ export const plugin: Plugin = {
     app.openRightPanel?.(PANEL_ID);
     // A first search with the defaults, so the panel opens on the earthquakes.
     void ctl.run();
+    activeCtl = ctl;
     disposePanel = () => {
+      activeCtl = null;
       unregisterTable?.();
       app.closeRightPanel?.(PANEL_ID);
       unregister();
       ctl.dispose();
     };
+  },
+  handleUrlParameters(_app, params) {
+    const link = linkFrom(params, new Date());
+    if (!link || !activeCtl) return;
+    const key = URL_PARAMETER_NAMES.map((name) => params.get(name)).join("|");
+    if (key === followedLink) return;
+    followedLink = key;
+    void activeCtl.followLink(link);
   },
   deactivate() {
     disposePanel?.();

@@ -3,6 +3,7 @@ import { dot, el, extLink, probeImage } from "./dom";
 import { eventPageUrl, type EventFeature } from "./events";
 import { eventDate, formatDepth, formatMagnitude, italyDateIso, italyDateLong, italyTime, utcDateIso, utcTime } from "./format";
 import { depthColor } from "./layer";
+import { shareButton } from "./share";
 import {
   feltMapUrl,
   feltQuestionnaireUrl,
@@ -66,7 +67,7 @@ export function renderDetail(ctl: Controller, feature: EventFeature): HTMLElemen
   const header = el(
     "div",
     { class: "ingq-det-head" },
-    back,
+    el("div", { class: "ingq-row" }, back, shareButton(ctl)),
     el(
       "div",
       { class: "ingq-det-title" },

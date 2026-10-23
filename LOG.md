@@ -2,6 +2,9 @@
 
 ## 2026-10-23
 
+- **Share links**: Share button (panel footer and event detail) gives `https://web.geolibre.app/?plugin=ingv-geolibre&ingv…`; `src/ingv/url-params.ts` reads and writes 15 `ingv*` parameters, only the non-default ones. "Map view" carries the searched box and the recipient searches that exact box; preset periods stay relative; `ingvEvent` opens the detail, fetched by `eventid=` when not in the search. Checked headed on web.geolibre.app: Greece link, box + event link, links copied from the panel. 37 tests.
+- **Minimap ratio**: fixed in GeoLibre (`zoomOffset: -4` in `packages/plugins/src/plugins/components/minimap.ts`), no setting and no plugin API. Asked in a comment on opengeos/GeoLibre#3188 for a `zoomOffset` option or a user setting.
+
 - **0.1.0 released** on GitHub with the zip (sha256 `d22048f2f1cc044e21fd710a6fcea4f8026b45b56f33489806fb70fa5562e46e`, checked on the download). Registry entry `registry/ingv-geolibre.json` ready on a branch of the fork: schema valid, pre-commit and the registry validator pass. PR opengeos/geolibre-plugins#121 opened.
 - **Screenshots** for the registry and the README (user, GeoLibre Desktop, 2026-10-23): search, table, detail, WebP at quality 82 (66-119 KB each) in `geolibre-plugin/screenshots/` and `docs/images/`. The zip now has them: 6 files.
 - **Release 0.1.0 prepared** (not released yet): version in `constants.ts`, `plugin.json`, `package.json`; name "INGV Earthquakes" in the Plugins menu, the manifest and saved layers; README rewritten for users (what it does, install from the registry, coverage, web vs Desktop, data and citation). `npm run package:geolibre` gives a 59 KB zip (`plugin.json`, `dist/`); screenshots for the registry still to add. Registry procedure as in openrndt-geolibre: release here with the zip, then `registry/ingv-geolibre.json` in a PR from ondata/geolibre-plugins, category Data.

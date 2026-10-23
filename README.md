@@ -14,6 +14,7 @@ Status: **beta**, open for testing.
 - **Map**: one circle per event, colour by depth (0-10, 10-30, 30-100, over 100 km), size by magnitude. A click opens the event. **Live zoom** fits the map to the results at every change.
 - **Results table**: sortable, hover to find the event on the map, export to CSV or GeoJSON, **Add to layers** to keep a search in the project.
 - **Event detail**: time in Italy and UTC, position, depth, magnitude type; the ShakeMap maps when INGV made one; the felt reports map; how location and magnitude changed after the first estimate; a search of the seismicity around the event; a link to the event page on [terremoti.ingv.it](https://terremoti.ingv.it).
+- **Share**: the Share button at the bottom of the panel gives a GeoLibre web link that opens the same search for anyone: period, magnitude, depth, area (the exact box of the map view, the point and radius, or the country), order and limit, plus the event when one is open. A preset period stays relative: a "24 h" link shows the last 24 hours when it is opened.
 - **Small screens**: below 768 px, where GeoLibre docks the panel under the map, the results become a list with Results and Filters tabs.
 
 ![The results table under the map, sorted by magnitude, and the event under the pointer ringed on the map](docs/images/2-table.webp)
@@ -27,6 +28,27 @@ You need [GeoLibre](https://github.com/opengeos/GeoLibre/releases) 3.4.0 or late
 1. In GeoLibre open **Settings > Manage Plugins**.
 2. Find **INGV Earthquakes** and choose **Install**.
 3. Turn the plugin on from **Plugins > INGV Earthquakes**: the panel opens with the earthquakes of the last 7 days, magnitude 2 and above, in the map view.
+
+## Links
+
+A link can also be written by hand. Every parameter is optional; the ones left out keep their default.
+
+| Parameter | Value | Example |
+| --- | --- | --- |
+| `ingvTime` | `1h`, `24h`, `3d`, `7d`, `30d`, `1y`, `custom` | `ingvTime=24h` |
+| `ingvFrom`, `ingvTo` | with `custom`, UTC minute | `ingvFrom=2026-10-01T00:00Z` |
+| `ingvMag`, `ingvDepth` | min,max (magnitude 0-8, depth 0-700 km) | `ingvMag=3,8` |
+| `ingvDepthOff` | depth classes hidden, by their top (0, 10, 30, 100) | `ingvDepthOff=100` |
+| `ingvArea` | `view`, `around`, `world`, `country` | `ingvArea=world` |
+| `ingvBox` | with `view`: west,south,east,north | `ingvBox=12,36,16,39` |
+| `ingvCentre`, `ingvRadius` | with `around`: lat,lon and km | `ingvCentre=42.35,13.4&ingvRadius=50` |
+| `ingvCountry` | with `country`: ISO code | `ingvCountry=GR` |
+| `ingvOrder` | `time`, `time-asc`, `magnitude`, `magnitude-asc` | `ingvOrder=magnitude` |
+| `ingvLimit` | number of events | `ingvLimit=200` |
+| `ingvEvent` | event id, opens its detail | `ingvEvent=47616612` |
+| `ingvLive` | `0`: live zoom off | `ingvLive=0` |
+
+For example, the earthquakes of magnitude 4.5 and above of the last 30 days in Greece: `https://web.geolibre.app/?plugin=ingv-geolibre&ingvTime=30d&ingvMag=4.5,8&ingvArea=country&ingvCountry=GR`
 
 ## Good to know
 

@@ -8,11 +8,12 @@ import { ResultsLayer } from "../src/ingv/results-layer";
 import type { MapLike } from "../src/ingv/host";
 import { buildQueryUrl, fdsnTime } from "../src/ingv/query";
 import { COUNTRIES, matchCountries } from "../src/ingv/countries";
-import { Controller, defaultSearch, depthRanges, depthShown, eventsBbox, filterOf, filtersOf, orderEvents, sameBox, sortEvents } from "../src/ingv/controller";
+import { Controller, defaultSearch, type SearchState, depthRanges, depthShown, eventsBbox, filterOf, filtersOf, orderEvents, sameBox, sortEvents } from "../src/ingv/controller";
 import { depthColor } from "../src/ingv/layer";
 import { formatDelay, parseHistory } from "../src/ingv/products";
 import { toCsv } from "../src/ingv/format";
 import { rangeSlider, snap } from "../src/ingv/range-slider";
+import { linkFrom, shareUrl, type Shared } from "../src/ingv/url-params";
 
 /** Three events of 2026-10-20..22, M >= 2, captured live on 2026-10-23. */
 const fixture = JSON.parse(readFileSync(join(__dirname, "fixtures/events-3.json"), "utf8"));
@@ -408,5 +409,63 @@ describe("range slider", () => {
     press(60); // M 3, 2 from 1 and 2 from 5: the low handle
     expect(s.get()).toEqual([3, 5]);
     expect(onChange).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("share links", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const now = new Date("2026-10-23T12:00:00Z");
+  const shared = (search: Partial<SearchState>, extra: Partial<Shared> = {}): Shared => ({
+    search: { ...defaultSearch(now), ...search },
+    box: null,
+    centre: null,
+    eventId: null,
+    liveZoom: true,
+    view: null,
+    ...extra,
+  });
+
+  it("writes only what is not at its default", () => {
+    const url = new URL(shareUrl(shared({}, { box: [6, 36, 19, 47.5] })));
+    expect(Object.fromEntries(url.searchParams)).toEqual({ plugin: "ingv-geolibre", ingvBox: "6,36,19,47.5" });
+  });
+
+  it("reads back the search it wrote", () => {
+    const italy = COUNTRIES.find((c) => c.code === "IT")!;
+    const cases: [Partial<SearchState>, Partial<Shared>][] = [
+      [{ time: "24h", magnitude: [3, 8], depth: [0, 300], depthOn: [true, false, true, false], order: "magnitude", limit: 50, area: "world" }, {}],
+      [{ area: "country", country: italy }, {}],
+      [{ area: "around", radiusKm: 50 }, { centre: { lat: 38.1234, lon: 15.5 } }],
+      [{ time: "custom", from: "2026-10-01T08:30", to: "2026-10-02T20:15" }, { eventId: 47616612, liveZoom: false }],
+    ];
+    for (const [search, extra] of cases) {
+      const s = shared(search, extra);
+      const link = linkFrom(new URL(shareUrl(s)).searchParams, now)!;
+      expect(link.search).toEqual({ ...s.search, centre: s.search.centre ?? s.centre });
+      expect(link.eventId).toBe(s.eventId);
+      expect(link.liveZoom).toBe(s.liveZoom ? null : false);
+    }
+  });
+
+  it("ignores values that are not valid and keeps the rest", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const link = linkFrom(new URLSearchParams("ingvTime=2w&ingvMag=5,3&ingvArea=world&ingvLimit=-1&ingvCountry=XX"), now)!;
+    expect(link.search).toEqual({ ...defaultSearch(now), area: "world" });
+    expect(warn).toHaveBeenCalledTimes(4);
+    expect(linkFrom(new URLSearchParams("lat=40&lon=12"), now)).toBeNull();
+    warn.mockRestore();
+  });
+
+  it("searches the shared box, not the wider screen around it", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
+    const map = { once: vi.fn(), flyTo: vi.fn(), getCenter: () => ({ lng: 12, lat: 42 }), getZoom: () => 5 };
+    const app = { addGeoJsonLayer: vi.fn(), getViewBounds: () => [0, 30, 25, 50], getMap: () => map, fitBounds: vi.fn() } as unknown as IngvHost;
+    const ctl = new Controller(app);
+    (ctl as unknown as { resultsLayer: () => null }).resultsLayer = () => null;
+    await ctl.followLink(linkFrom(new URLSearchParams("ingvBox=6,36,19,47.5&ingvLive=0"), now)!);
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]));
+    expect(url.searchParams.get("minlongitude")).toBe("6");
+    expect(app.fitBounds).toHaveBeenCalledWith([6, 36, 19, 47.5]);
+    expect(ctl.shared().box).toEqual([6, 36, 19, 47.5]);
   });
 });

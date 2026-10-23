@@ -84,3 +84,6 @@ export function buildQueryUrl(filter: EventFilter): string {
   if (filter.limit !== undefined) params.set("limit", String(filter.limit));
   return `${FDSN_EVENT_URL}?${params}`;
 }
+
+/** The GeoJSON query URL of one event. */
+export const eventQueryUrl = (eventId: number) => `${FDSN_EVENT_URL}?${new URLSearchParams({ format: "geojson", eventid: String(eventId) })}`;

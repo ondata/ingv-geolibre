@@ -518,9 +518,24 @@
 }
 
 .ingq-panel .ingq-github {
-  margin-left: auto;
   display: flex;
   color: var(--ingq-muted);
+}
+
+.ingq-panel .ingq-share {
+  padding: 2px 8px;
+  border: 1px solid var(--ingq-border);
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ingq-accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ingq-panel .ingq-footer .ingq-share {
+  margin-left: auto;
 }
 
 .ingq-about {
