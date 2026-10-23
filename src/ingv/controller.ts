@@ -184,7 +184,7 @@ export class Controller {
     hover: null,
     hiddenCount: null,
     tableOpen: false,
-    liveZoom: false,
+    liveZoom: true,
     sort: { key: "time", dir: -1 },
   };
   private listeners = new Set<() => void>();
@@ -192,6 +192,8 @@ export class Controller {
   /** The map view a live zoom left, and the box searched before it. */
   private liveFit: { view: Bbox; searched: Bbox | null } | null = null;
   private running: AbortController | null = null;
+  /** The centre the last "Around" search used; the panel shows it. */
+  usedCentre: SearchState["centre"] = null;
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
   openTable: () => void = () => {};
   closeTable: () => void = () => {};
@@ -224,10 +226,6 @@ export class Controller {
       this.update({ status: "error", message: "This version of GeoLibre cannot add layers from plugins." });
       return;
     }
-    if (this.search.area === "around" && !this.search.centre) {
-      const c = this.app.getMap?.()?.getCenter();
-      if (c) this.search = { ...this.search, centre: { lat: c.lat, lon: c.lng } };
-    }
     this.running?.abort();
     const controller = new AbortController();
     this.running = controller;
@@ -235,7 +233,7 @@ export class Controller {
     try {
       const view = this.searchedView();
       const now = new Date();
-      const shown = this.search;
+      const shown = { ...this.search, centre: this.aroundCentre() };
       // The hidden classes are asked too, so an empty result can say what the legend hides.
       const hidden = shown.depthOn.some((on) => !on) ? { ...shown, depthOn: shown.depthOn.map((on) => !on) } : null;
       const [events, hiddenEvents] = await Promise.all([
@@ -324,6 +322,19 @@ export class Controller {
     if (this.state.liveZoom && this.liveFit && view && sameBox(view, this.liveFit.view)) return this.liveFit.searched;
     this.liveFit = null;
     return view;
+  }
+
+  /**
+   * The centre of "Around": the clicked point, else the map centre. After a
+   * live zoom the map centre is the results' own, so until the user moves the
+   * map the previous centre is kept. Call after `searchedView`.
+   */
+  private aroundCentre(): SearchState["centre"] {
+    if (this.search.area !== "around") return this.search.centre;
+    if (this.search.centre) return (this.usedCentre = this.search.centre);
+    if (this.liveFit && this.usedCentre) return this.usedCentre;
+    const c = this.app.getMap?.()?.getCenter();
+    return (this.usedCentre = c ? { lat: c.lat, lon: c.lng } : null);
   }
 
   /** Live zoom: fit to the results, then note the view it left. */

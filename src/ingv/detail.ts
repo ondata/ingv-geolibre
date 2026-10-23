@@ -181,5 +181,5 @@ export function renderDetail(ctl: Controller, feature: EventFeature): HTMLElemen
     ),
   );
 
-  return el("div", { class: "ingq-detail" }, header, summary, shake, felt, history, around, el("div", { class: "ingq-credit ingq-pad" }, "Data: INGV, CC BY 4.0."));
+  return el("div", { class: "ingq-detail" }, header, summary, shake, felt, history, around);
 }

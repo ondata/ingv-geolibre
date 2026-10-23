@@ -190,6 +190,8 @@
   position: relative;
   height: 22px;
   margin: 0 8px;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .ingq-range-track,
@@ -480,14 +482,93 @@
   padding-left: 16px;
 }
 
-.ingq-credit {
-  margin-top: auto;
+/* Footer: credits fixed at the bottom of the panel */
+.ingq-footer {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--ingq-line);
+  background: #fafafa;
   font-size: 11px;
   color: var(--ingq-muted);
 }
 
-.ingq-pad {
+.ingq-panel .ingq-info {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--ingq-border);
+  background: #fff;
+  color: var(--ingq-muted);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.ingq-panel .ingq-info.ingq-on {
+  border-color: var(--ingq-accent);
+  background: var(--ingq-accent);
+  color: #fff;
+}
+
+.ingq-panel .ingq-github {
+  margin-left: auto;
+  display: flex;
+  color: var(--ingq-muted);
+}
+
+.ingq-about {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid var(--ingq-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.ingq-about p {
+  margin: 0;
+}
+
+.ingq-about .ingq-row {
+  font-size: 13px;
+  color: var(--ingq-text);
+}
+
+.ingq-panel .ingq-close {
+  border: 0;
+  background: none;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ingq-muted);
+  cursor: pointer;
+}
+
+.ingq-about-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 12px;
+}
+
+.ingq-about-foot {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+  font-size: 11px;
 }
 
 /* Event detail */

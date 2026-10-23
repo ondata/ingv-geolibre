@@ -47,7 +47,7 @@ Always visible at the top of the panel, two direct filters:
 
 Then:
 
-- Area: a menu you can type in, with map view (default), around a point (centre from a map click, radius), world, and 173 countries from Natural Earth 1:110m, found by name or ISO code. A country moves the map to its box; one across the 180° meridian is searched on its latitude band. Outside Italy the INGV catalogue lists mostly the stronger earthquakes: in Greece's box, 59 events in 2026, the smallest M 2.6, against 13,025 in Italy's (2026-10-23).
+- Area: a menu you can type in, with map view (default), around a point (centre that follows the map until a map click fixes it, radius), world, and 173 countries from Natural Earth 1:110m, found by name or ISO code. A country moves the map to its box; one across the 180° meridian is searched on its latitude band. Outside Italy the INGV catalogue lists mostly the stronger earthquakes: in Greece's box, 59 events in 2026, the smallest M 2.6, against 13,025 in Italy's (2026-10-23).
 - Search button, then one line: "121 earthquakes, strongest M 5.5".
 
 Behind a "More filters" disclosure, closed by default: depth range (same double slider), order of results, limit.

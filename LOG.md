@@ -2,6 +2,12 @@
 
 ## 2026-10-23
 
+- **About the data says what the catalogue covers**: detailed for Italy and its seas (from M 0.1), elsewhere only stronger events (rest of Europe and Mediterranean from about M 4.5, rest of the world from about M 5.5), from the 30-day measure below.
+- **Footer with credits** (design update): fixed at the bottom of the panel, in search and detail: "i", "Data: INGV, CC BY 4.0", GitHub icon. "i" opens "About the data" (source, web service, ShakeMap, felt reports, licence, Natural Earth, repo). The design cited the RSN DOI 10.13127/SD/X0FXNH7QFY, which resolves to the IV station network; the citation used is ISIDe's (10.13127/ISIDE, from DataCite), the catalogue the event service serves. Felt reports link to www.hsit.it: https://www.haisentitoilterremoto.it timed out on 2026-10-23.
+- **Area list fixed**: hovering a row rebuilt the list, so the click landed on a removed row and the pick was lost (seen in Desktop: no way back to "Map view"; reproduced headless, where "Around a point…" did not take either). Hover now only moves the mark. Headless after the fix: Around, Map view, World, Map view all taken.
+- **Around follows the map**: the centre is the map centre at each search until a click fixes it ("(fixed)"); picking an area again unfixes it. After a live zoom the previous centre is kept while the map stays where the fit left it, as for "Map view".
+- **Live zoom on by default**. 33 tests.
+- **Sliders**: a press on the line moves the nearer handle there and keeps dragging it (magnitude and depth). 32 tests.
 - **Hidden depth classes counted**: with a class off, the search also asks the hidden classes and the panel and the empty table say "N in hidden depth classes" (an empty result on the Aeolian Islands, last 24 h, M >= 4, 30 km and deeper, looked like a fault: the 5 events were all 7-24 km deep). One extra request only when a class is off. 31 tests.
 - **Custom period with time, depth classes as filters** (design update): datetime-local fields in local time, queried in UTC. The four legend classes toggle; the service takes one depth range per request, so the shown classes become one request per contiguous run (cut to the depth slider), merged without repeats, kept to their own class (bounds are inclusive), ordered and cut to the limit. Headless on web: 120 events, two shallow classes off, 15. 30 tests.
 - **Coverage measured** (last 30 days, world, any magnitude): Italy's box 1,357 events from M 0.1 (median 1.2); rest of Europe and Mediterranean 7, from M 4.5; rest of the world 31, from M 5.5.

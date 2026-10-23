@@ -12,7 +12,7 @@ import { Controller, defaultSearch, depthRanges, depthShown, eventsBbox, filterO
 import { depthColor } from "../src/ingv/layer";
 import { formatDelay, parseHistory } from "../src/ingv/products";
 import { toCsv } from "../src/ingv/format";
-import { snap } from "../src/ingv/range-slider";
+import { rangeSlider, snap } from "../src/ingv/range-slider";
 
 /** Three events of 2026-10-20..22, M >= 2, captured live on 2026-10-23. */
 const fixture = JSON.parse(readFileSync(join(__dirname, "fixtures/events-3.json"), "utf8"));
@@ -313,6 +313,26 @@ describe("live zoom", () => {
     expect(new URL(url).searchParams.get("minlongitude")).toBe("6");
     expect(sameBox(view, [6, 36, 19, 47.5])).toBe(false);
   });
+
+  it("lets the centre of Around follow the map until a click fixes it", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
+    let centre = { lng: 15, lat: 38 };
+    const map = { once: vi.fn(), flyTo: vi.fn(), getCenter: () => centre };
+    const app = { addGeoJsonLayer: vi.fn(), getViewBounds: () => null, getMap: () => map } as unknown as IngvHost;
+    const ctl = new Controller(app);
+    (ctl as unknown as { resultsLayer: () => null }).resultsLayer = () => null;
+    ctl.update({ liveZoom: false });
+    const lat = (i: number) => new URL(String(vi.mocked(fetch).mock.calls[i][0])).searchParams.get("latitude");
+    ctl.search = { ...ctl.search, area: "around" };
+    await ctl.run();
+    centre = { lng: 14, lat: 39 };
+    await ctl.run();
+    ctl.search = { ...ctl.search, centre: { lat: 40, lon: 13 } };
+    centre = { lng: 12, lat: 41 };
+    await ctl.run();
+    expect([lat(0), lat(1), lat(2)]).toEqual(["38", "39", "40"]);
+    expect(ctl.search.centre).toEqual({ lat: 40, lon: 13 });
+  });
 });
 
 describe("depth classes", () => {
@@ -362,5 +382,31 @@ describe("hidden depth classes", () => {
     await ctl.run();
     expect(ctl.hiddenNote()).toBe("");
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("range slider", () => {
+  /** A slider 160 px wide on the 0-8 magnitude scale: 20 px per unit. */
+  function slider(initial: [number, number]) {
+    const onChange = vi.fn();
+    const s = rangeSlider({ min: 0, max: 8, step: 0.5 }, initial, () => {}, onChange);
+    s.element.getBoundingClientRect = () => ({ left: 0, width: 160 }) as DOMRect;
+    s.element.querySelectorAll<HTMLElement>(".ingq-range-handle").forEach((h) => (h.setPointerCapture = () => {}));
+    const press = (x: number) => {
+      s.element.dispatchEvent(new MouseEvent("pointerdown", { clientX: x, bubbles: true }));
+      s.element.querySelectorAll(".ingq-range-handle").forEach((h) => h.dispatchEvent(new MouseEvent("pointerup")));
+    };
+    return { s, onChange, press };
+  }
+
+  it("moves the nearer handle to a press on the line", () => {
+    const { s, onChange, press } = slider([2, 8]);
+    press(20); // M 1, below the low handle
+    expect(s.get()).toEqual([1, 8]);
+    press(100); // M 5: 4 from the low handle, 3 from the high one
+    expect(s.get()).toEqual([1, 5]);
+    press(60); // M 3, 2 from 1 and 2 from 5: the low handle
+    expect(s.get()).toEqual([3, 5]);
+    expect(onChange).toHaveBeenCalledTimes(3);
   });
 });

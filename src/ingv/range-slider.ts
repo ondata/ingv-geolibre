@@ -50,19 +50,36 @@ export function rangeSlider(
     return true;
   }
 
+  const valueAt = (clientX: number) => {
+    const rect = track.getBoundingClientRect();
+    return scale.min + ((clientX - rect.left) / rect.width) * (scale.max - scale.min);
+  };
+
+  /** Drag handle `i` until the pointer is released, then report the change. */
+  function drag(i: number, event: PointerEvent) {
+    const handle = handles[i];
+    handle.setPointerCapture(event.pointerId);
+    const move = (e: PointerEvent) => set(i, valueAt(e.clientX));
+    const up = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+      onChange(value);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  }
+
+  // A press on the line moves the nearer handle there, and keeps dragging it.
+  track.addEventListener("pointerdown", (event) => {
+    if (handles.includes(event.target as HTMLDivElement)) return;
+    const v = valueAt(event.clientX);
+    const i = v > value[1] || (v >= value[0] && value[1] - v < v - value[0]) ? 1 : 0;
+    set(i, v);
+    drag(i, event);
+  });
+
   handles.forEach((handle, i) => {
-    handle.addEventListener("pointerdown", (event) => {
-      handle.setPointerCapture(event.pointerId);
-      const rect = track.getBoundingClientRect();
-      const move = (e: PointerEvent) => set(i, scale.min + ((e.clientX - rect.left) / rect.width) * (scale.max - scale.min));
-      const up = () => {
-        handle.removeEventListener("pointermove", move);
-        handle.removeEventListener("pointerup", up);
-        onChange(value);
-      };
-      handle.addEventListener("pointermove", move);
-      handle.addEventListener("pointerup", up);
-    });
+    handle.addEventListener("pointerdown", (event) => drag(i, event));
     handle.addEventListener("keydown", (event) => {
       const delta = event.key === "ArrowRight" || event.key === "ArrowUp" ? scale.step : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -scale.step : 0;
       if (delta && set(i, value[i] + delta)) onChange(value);

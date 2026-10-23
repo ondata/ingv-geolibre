@@ -2,7 +2,7 @@ import { areaCombo } from "./area-combo";
 import type { Controller } from "./controller";
 import { wrapsWorld } from "./countries";
 import { renderDetail } from "./detail";
-import { dot, el } from "./dom";
+import { dot, el, extLink } from "./dom";
 import { formatMagnitude } from "./format";
 import { DEPTH_CLASSES } from "./layer";
 import { DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
@@ -16,11 +16,61 @@ const ORDERS: { id: OrderBy; label: string }[] = [
 ];
 
 const sectionTitle = (text: string) => el("div", { class: "ingq-label" }, text);
-const credit = () => el("div", { class: "ingq-credit" }, "Data: INGV, CC BY 4.0.");
+const REPO_URL = "https://github.com/ondata/ingv-geolibre";
+const GITHUB_ICON =
+  "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z";
+
+/** The credits, fixed at the bottom of the panel; "i" opens the sources and how to cite them. */
+function footer(): HTMLElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("width", "16");
+  svg.setAttribute("height", "16");
+  svg.setAttribute("fill", "currentColor");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", GITHUB_ICON);
+  svg.append(path);
+  const github = el("a", { href: REPO_URL, target: "_blank", rel: "noopener noreferrer", class: "ingq-github", title: "github.com/ondata/ingv-geolibre" }, svg);
+
+  const row = (label: string, link: HTMLElement) => [el("span", { class: "ingq-muted" }, label), link];
+  const about = el(
+    "div",
+    { class: "ingq-about" },
+    el("div", { class: "ingq-row" }, el("strong", {}, "About the data"), el("button", { type: "button", class: "ingq-close", "aria-label": "Close", onclick: () => toggle() }, "×")),
+    el("p", {}, "Earthquake locations and magnitudes come from the Istituto Nazionale di Geofisica e Vulcanologia (INGV), through its FDSN event web service."),
+    // Measured over the 30 days before 2026-10-23 (see LOG.md, "Coverage measured").
+    el(
+      "p",
+      {},
+      "The catalogue is detailed for Italy and its seas, down to the smallest events (M 0.1). Elsewhere INGV lists only the stronger earthquakes: in the rest of Europe and the Mediterranean from about M 4.5, in the rest of the world from about M 5.5.",
+    ),
+    el(
+      "div",
+      { class: "ingq-about-grid" },
+      ...row("Source", extLink("https://terremoti.ingv.it", "terremoti.ingv.it")),
+      ...row("Web service", extLink("https://webservices.ingv.it/swagger-ui/dist/?url=https://ingv.github.io/openapi/fdsnws/event/0.0.1/event.yaml", "webservices.ingv.it/fdsnws/event/1")),
+      ...row("ShakeMap", extLink("https://shakemap.ingv.it", "shakemap.ingv.it")),
+      ...row("Felt reports", extLink("https://www.hsit.it", "hsit.it")),
+      ...row("Licence", extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0")),
+      ...row("Countries", extLink("https://www.naturalearthdata.com", "Natural Earth 1:110m")),
+    ),
+    // Citation from DataCite for the DOI of ISIDe, the INGV catalogue the event service serves.
+    el("p", { class: "ingq-muted ingq-small-text" }, "Cite as: ISIDe Working Group (2007). Italian Seismological Instrumental and Parametric Database (ISIDe). INGV. ", extLink("https://doi.org/10.13127/ISIDE", "doi:10.13127/ISIDE")),
+    el("div", { class: "ingq-about-foot ingq-muted" }, "Plugin source and issues: ", extLink(REPO_URL, "GitHub")),
+  );
+  const info = el("button", { type: "button", class: "ingq-info", title: "About the data", onclick: () => toggle() }, "i");
+  function toggle() {
+    about.hidden = !about.hidden;
+    info.classList.toggle("ingq-on", !about.hidden);
+  }
+  about.hidden = true;
+  return el("div", { class: "ingq-footer" }, info, el("span", {}, "Data: ", extLink("https://terremoti.ingv.it", "INGV"), ", CC BY 4.0"), github, about);
+}
 
 /** The right panel: the search, or the detail of the selected event. */
 export function renderPanel(ctl: Controller, container: HTMLElement): () => void {
-  const root = el("div", { class: "ingq-panel" });
+  const foot = footer();
+  const root = el("div", { class: "ingq-panel" }, foot);
   const search = buildSearch(ctl);
   let detailFor: number | null = null;
   let detail: HTMLElement | null = null;
@@ -34,12 +84,12 @@ export function renderPanel(ctl: Controller, container: HTMLElement): () => void
         detailFor = selected.properties.eventId;
       }
       if (search.element.isConnected) search.element.remove();
-      if (!detail!.isConnected) root.append(detail!);
+      if (!detail!.isConnected) foot.before(detail!);
     } else {
       detail?.remove();
       detail = null;
       detailFor = null;
-      if (!search.element.isConnected) root.append(search.element);
+      if (!search.element.isConnected) foot.before(search.element);
       search.refresh();
     }
   }
@@ -112,7 +162,7 @@ function buildSearch(ctl: Controller) {
   const combo = areaCombo((area, country) => {
     // A country moves the map to it, unless its box spans the whole world.
     if (country && !wrapsWorld(country.bbox)) ctl.app.fitBounds?.(country.bbox);
-    ctl.set({ area, country, centre: area === "around" ? ctl.search.centre : null });
+    ctl.set({ area, country, centre: null });
   });
   const countryBbox = el("span", { class: "ingq-mono" });
   const countryNote = el("span", {});
@@ -130,7 +180,7 @@ function buildSearch(ctl: Controller) {
     { class: "ingq-around" },
     el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Centre"), centreText),
     el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Radius"), el("span", { class: "ingq-pair" }, radius, el("span", {}, "km"))),
-    el("div", { class: "ingq-muted" }, "Click the map to move the centre."),
+    el("div", { class: "ingq-muted" }, "The centre follows the map; click the map to fix it."),
   );
   const area = el("div", { class: "ingq-group" }, sectionTitle("Area"), combo.element, countryInfo, around);
 
@@ -203,7 +253,7 @@ function buildSearch(ctl: Controller) {
     el("span", { class: "ingq-faint" }, "fit map to results on every filter change"),
   );
 
-  const element = el("div", { class: "ingq-search" }, liveRow, time, magnitude, area, result, more, credit());
+  const element = el("div", { class: "ingq-search" }, liveRow, time, magnitude, area, result, more);
 
   // Click on the map moves the centre of "Around".
   const map = ctl.app.getMap?.();
@@ -238,7 +288,8 @@ function buildSearch(ctl: Controller) {
       abroadNote.hidden = c.code === "IT";
     }
     around.hidden = s.area !== "around";
-    centreText.textContent = s.centre ? `${s.centre.lat.toFixed(2)} N, ${s.centre.lon.toFixed(2)} E` : "map centre";
+    const centre = s.centre ?? ctl.usedCentre;
+    centreText.textContent = `${centre ? `${centre.lat.toFixed(2)} N, ${centre.lon.toFixed(2)} E` : "map centre"}${s.centre ? " (fixed)" : ""}`;
     radius.value = String(s.radiusKm);
     depthSlider.set(s.depth);
     depthText.textContent = `${s.depth[0]} - ${s.depth[1]} km`;

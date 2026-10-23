@@ -44,7 +44,8 @@ export function areaCombo(onPick: (area: Area, country: Country | null) => void)
           class: `ingq-combo-item${i === active ? " ingq-on" : ""}`,
           role: "option",
           onmousedown: (e: Event) => (e.preventDefault(), pick(o)),
-          onmouseenter: () => ((active = i), drawList()),
+          // Only the mark moves: rebuilding the list here would replace the row under the pointer before the click lands.
+          onmouseenter: () => mark(i),
         },
         el("span", {}, labelOf(o)),
         el("span", { class: o.area === "country" ? "ingq-combo-code" : "ingq-combo-note" }, o.area === "country" ? o.country.code : o.note),
@@ -56,6 +57,11 @@ export function areaCombo(onPick: (area: Area, country: Country | null) => void)
     );
     if (q && !options.length) list.append(el("div", { class: "ingq-combo-none" }, `No country matches “${query.trim()}”.`));
     list.querySelector(".ingq-combo-item.ingq-on")?.scrollIntoView({ block: "nearest" });
+  }
+
+  function mark(i: number) {
+    active = i;
+    list.querySelectorAll(".ingq-combo-item").forEach((row, j) => row.classList.toggle("ingq-on", j === i));
   }
 
   function setOpen(next: boolean) {
