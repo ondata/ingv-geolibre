@@ -1,6 +1,6 @@
 import type { Country } from "./countries";
 import { fetchEvents, type EventCollection, type EventFeature } from "./events";
-import type { IngvHost } from "./host";
+import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
 import {
@@ -192,6 +192,8 @@ export class Controller {
   /** The map view a live zoom left, and the box searched before it. */
   private liveFit: { view: Bbox; searched: Bbox | null } | null = null;
   private running: AbortController | null = null;
+  /** The panel's root, set by `renderPanel`: on a phone it covers part of the map. */
+  panelElement: HTMLElement | null = null;
   /** The centre the last "Around" search used; the panel shows it. */
   usedCentre: SearchState["centre"] = null;
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
@@ -282,7 +284,7 @@ export class Controller {
   select(feature: EventFeature) {
     const [lon, lat] = feature.geometry.coordinates;
     const map = this.app.getMap?.();
-    map?.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 8) });
+    map?.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 8), offset: [0, -this.mapPadding().bottom / 2] });
     this.results?.setRing(feature.properties.eventId);
     this.update({ view: "detail", selected: feature });
   }
@@ -358,8 +360,30 @@ export class Controller {
   zoomToResults() {
     const box = eventsBbox(this.state.events?.features ?? []);
     if (!box) return;
-    if (box[0] === box[2] && box[1] === box[3]) this.app.getMap?.()?.flyTo({ center: [box[0], box[1]], zoom: 8 });
+    const map = this.app.getMap?.();
+    const padding = this.mapPadding();
+    if (box[0] === box[2] && box[1] === box[3]) return map?.flyTo({ center: [box[0], box[1]], zoom: 8, offset: [0, -padding.bottom / 2] });
+    // Not fitBounds with padding: in GeoLibre web (MapLibre 6.15) it left the
+    // top of the map unpainted until a reload (2026-10-23). The camera is
+    // computed with the padding and then reached without it.
+    const camera = padding.bottom ? map?.cameraForBounds([[box[0], box[1]], [box[2], box[3]]], { padding }) : undefined;
+    if (map && camera) map.easeTo({ center: camera.center, zoom: camera.zoom });
     else this.app.fitBounds?.(box);
+  }
+
+  /**
+   * The map padding that keeps the results off the panel. On a phone GeoLibre
+   * lays the panel over the bottom of the map, so a plain fit puts part of the
+   * points under it; beside the map (desktop) the padding is zero.
+   */
+  private mapPadding(): Padding {
+    const padding = { top: 40, bottom: 0, left: 40, right: 40 };
+    const map = this.app.getMap?.();
+    if (!map?.getContainer || !this.panelElement?.isConnected) return { ...padding, top: 0, left: 0, right: 0 };
+    const m = map.getContainer().getBoundingClientRect();
+    const p = this.panelElement.getBoundingClientRect();
+    const covers = p.left <= m.left + 1 && p.right >= m.right - 1 && p.top > m.top && p.top < m.bottom;
+    return covers ? { ...padding, bottom: m.bottom - p.top + 40 } : { ...padding, top: 0, left: 0, right: 0 };
   }
 
   /** Keep the current search in the project as a layer of the Layers panel. */

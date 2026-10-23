@@ -1,6 +1,13 @@
 import type { GeoLibreAppAPI, GeoLibreFeatureCollection, GeoLibreFloatingPanelRegistration, GeoLibreMapControlPosition } from "../lib/geolibre/host-api";
 import type { Bbox } from "./query";
 
+export interface Padding {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 /** The few MapLibre map members the plugin uses, typed here to avoid bundling maplibre-gl. */
 export interface MapLike {
   on(type: string, listener: (event: never) => void): void;
@@ -8,7 +15,12 @@ export interface MapLike {
   once(type: string, listener: () => void): void;
   off(type: string, listener: (event: never) => void): void;
   off(type: string, layerId: string, listener: (event: never) => void): void;
-  flyTo(options: { center: [number, number]; zoom?: number }): void;
+  flyTo(options: { center: [number, number]; zoom?: number; offset?: [number, number] }): void;
+  cameraForBounds(bounds: [[number, number], [number, number]], options?: { padding?: Padding }): { center: unknown; zoom: number } | undefined;
+  easeTo(options: { center: unknown; zoom: number }): void;
+  getContainer(): HTMLElement;
+  getProjection?(): { type?: unknown } | undefined;
+  setProjection?(projection: { type: string }): void;
   getZoom(): number;
   getCenter(): { lng: number; lat: number };
   getCanvas(): HTMLCanvasElement;

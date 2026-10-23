@@ -1,11 +1,11 @@
 import { areaCombo } from "./area-combo";
-import type { Controller } from "./controller";
+import { sortEvents, type Controller } from "./controller";
 import { wrapsWorld } from "./countries";
 import { renderDetail } from "./detail";
 import { dot, el, extLink } from "./dom";
-import { formatMagnitude } from "./format";
-import { DEPTH_CLASSES } from "./layer";
-import { DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
+import { eventDate, formatDepth, formatMagnitude, italyDateShort, italyTime } from "./format";
+import { DEPTH_CLASSES, depthColor } from "./layer";
+import { DEFAULT_MAGNITUDE, DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
 import { rangeSlider } from "./range-slider";
 
 const ORDERS: { id: OrderBy; label: string }[] = [
@@ -71,6 +71,7 @@ function footer(): HTMLElement {
 export function renderPanel(ctl: Controller, container: HTMLElement): () => void {
   const foot = footer();
   const root = el("div", { class: "ingq-panel" }, foot);
+  ctl.panelElement = root;
   const search = buildSearch(ctl);
   let detailFor: number | null = null;
   let detail: HTMLElement | null = null;
@@ -188,7 +189,7 @@ function buildSearch(ctl: Controller) {
   const count = el("span", { class: "ingq-count" });
   const strongest = el("span", { class: "ingq-muted" });
   const zoomLink = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.zoomToResults()) }, "Zoom to results");
-  const tableLink = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.openTable()) }, "Show table");
+  const tableLink = el("a", { href: "#", class: "ingq-link ingq-table-link", onclick: (e: Event) => (e.preventDefault(), ctl.openTable()) }, "Show table");
   const message = el("div", { class: "ingq-message" });
   const legend = el(
     "div",
@@ -253,7 +254,38 @@ function buildSearch(ctl: Controller) {
     el("span", { class: "ingq-faint" }, "fit map to results on every filter change"),
   );
 
-  const element = el("div", { class: "ingq-search" }, liveRow, time, magnitude, area, result, more);
+  // Small screens (GeoLibre docks the panel under the map below 768 px): the
+  // period stays on top, then two tabs, the results as a list and the filters.
+  let tab: "results" | "filters" = "results";
+  const tabButton = (id: typeof tab, label: string) =>
+    el("button", { type: "button", class: "ingq-tab", onclick: () => ((tab = id), refresh()) }, label);
+  const resultsTab = tabButton("results", "Results");
+  const filtersTab = tabButton("filters", "Filters");
+  const tabs = el("div", { class: "ingq-tabs" }, resultsTab, filtersTab);
+  const list = el("div", { class: "ingq-list" });
+  let listed: unknown;
+  function drawList() {
+    const { events, sort } = ctl.state;
+    if (listed === events) return;
+    listed = events;
+    list.replaceChildren(
+      ...sortEvents(events?.features ?? [], sort).map((f) => {
+        const p = f.properties;
+        const date = eventDate(p.time);
+        return el(
+          "button",
+          { type: "button", class: "ingq-list-row", onclick: () => ctl.select(f) },
+          el("span", { class: "ingq-list-mag" }, el("strong", {}, formatMagnitude(p.mag)), el("span", { class: "ingq-mono ingq-tiny ingq-muted" }, p.magType)),
+          el("span", { class: "ingq-list-place" }, el("span", { class: "ingq-ellipsis" }, p.place), el("span", { class: "ingq-muted ingq-small-text" }, `${italyDateShort(date)} · ${italyTime(date).slice(0, 5)}`)),
+          el("span", { class: "ingq-mono ingq-small-text ingq-inline" }, formatDepth(p.depth), dot(depthColor(p.depth))),
+        );
+      }),
+    );
+  }
+  for (const [node, where] of [[time, "both"], [tabs, "both"], [result, "results"], [list, "results"], [liveRow, "filters"], [magnitude, "filters"], [area, "filters"], [more, "filters"]] as const)
+    node.dataset.tab = where;
+
+  const element = el("div", { class: "ingq-search" }, liveRow, time, tabs, magnitude, area, result, list, more);
 
   // Click on the map moves the centre of "Around".
   const map = ctl.app.getMap?.();
@@ -317,6 +349,17 @@ function buildSearch(ctl: Controller) {
     live.checked = st.liveZoom;
     zoomLink.hidden = st.liveZoom || st.status !== "done" || !features.length;
     tableLink.hidden = st.tableOpen || !features.length;
+
+    element.dataset.show = tab;
+    resultsTab.classList.toggle("ingq-on", tab === "results");
+    filtersTab.classList.toggle("ingq-on", tab === "filters");
+    const changed = [
+      s.magnitude[0] !== DEFAULT_MAGNITUDE[0] || s.magnitude[1] !== DEFAULT_MAGNITUDE[1],
+      s.area !== "view",
+      s.depth[0] !== DEPTH_SCALE.min || s.depth[1] !== DEPTH_SCALE.max,
+    ].filter(Boolean).length;
+    filtersTab.textContent = changed ? `Filters · ${changed}` : "Filters";
+    drawList();
   }
 
   return {

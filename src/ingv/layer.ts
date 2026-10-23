@@ -2,7 +2,7 @@ import type { EventCollection } from "./events";
 import type { IngvHost } from "./host";
 
 /** Name of a saved search in GeoLibre's Layers panel, before its period and magnitudes. */
-export const LAYER_NAME = "INGV earthquakes";
+export const LAYER_NAME = "INGV Earthquakes";
 
 /**
  * Depth classes, shallow (red) to deep (blue). Each class starts at its value,

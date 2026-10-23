@@ -54,7 +54,12 @@ export const plugin: Plugin = {
       ctl.openTable = () => host.openFloatingPanel?.(TABLE_ID);
       ctl.closeTable = () => host.closeFloatingPanel?.(TABLE_ID);
     }
+    // The catalogue is regional: a flat map reads better than the globe GeoLibre opens on.
+    const map = host.getMap?.();
+    if (map?.getProjection?.()?.type === "globe") map.setProjection?.({ type: "mercator" });
     app.openRightPanel?.(PANEL_ID);
+    // A first search with the defaults, so the panel opens on the earthquakes.
+    void ctl.run();
     disposePanel = () => {
       unregisterTable?.();
       app.closeRightPanel?.(PANEL_ID);

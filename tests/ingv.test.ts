@@ -144,9 +144,9 @@ describe("layer", () => {
       addGeoJsonLayer: vi.fn(() => "layer-1"),
       importLayerStyle: vi.fn(() => ({ ok: true, warnings: [] })),
     } as unknown as IngvHost;
-    expect(addToProject(app, events, "INGV earthquakes, 7 days, M 2-8")).toBe("layer-1");
+    expect(addToProject(app, events, "INGV Earthquakes, 7 days, M 2-8")).toBe("layer-1");
     const added = vi.mocked(app.addGeoJsonLayer!).mock.calls[0];
-    expect(added[0]).toBe("INGV earthquakes, 7 days, M 2-8");
+    expect(added[0]).toBe("INGV Earthquakes, 7 days, M 2-8");
     const mags = (added[1] as typeof events).features.map((f) => f.properties.mag);
     expect(mags).toEqual([...mags].sort((a, b) => b - a));
     expect(app.importLayerStyle).toHaveBeenCalledWith("layer-1", eventsStyle());
