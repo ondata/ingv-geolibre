@@ -884,6 +884,44 @@
 }
 
 @media (max-width: 767px) {
+  /* GeoLibre's container scrolls here, not the panel: the tabs and the footer stay in view. */
+  .ingq-panel {
+    height: auto;
+  }
+
+  .ingq-search,
+  .ingq-detail {
+    overflow: visible;
+  }
+
+  .ingq-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  .ingq-search > .ingq-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  /* Every change searches: the button only takes the room of the first rows of the list. */
+  .ingq-panel .ingq-search-btn {
+    display: none;
+  }
+
+  .ingq-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ingq-chip {
+    flex: none;
+  }
+
   .ingq-search {
     gap: 14px;
   }

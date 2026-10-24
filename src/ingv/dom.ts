@@ -27,6 +27,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 export const extLink = (href: string, text: string, cls = "") =>
   el("a", { href, target: "_blank", rel: "noopener noreferrer", class: cls || undefined }, text);
 
+/** The nearest ancestor that scrolls: on a phone GeoLibre's panel container scrolls, not the plugin's panel. */
+export function scrollParent(node: HTMLElement): HTMLElement | null {
+  for (let e = node.parentElement; e; e = e.parentElement) if (/auto|scroll/.test(getComputedStyle(e).overflowY)) return e;
+  return null;
+}
+
 /** A dot of the given colour. */
 export const dot = (color: string) => el("span", { class: "ingq-dot", style: { background: color } });
 

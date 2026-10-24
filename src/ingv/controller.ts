@@ -1,4 +1,5 @@
 import type { Country } from "./countries";
+import { scrollParent } from "./dom";
 import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
@@ -434,7 +435,8 @@ export class Controller {
     const map = this.app.getMap?.();
     if (!map?.getContainer || !this.panelElement?.isConnected) return { ...padding, top: 0, left: 0, right: 0 };
     const m = map.getContainer().getBoundingClientRect();
-    const p = this.panelElement.getBoundingClientRect();
+    // The visible part of the panel: on a phone it is taller than GeoLibre's container and scrolls inside it.
+    const p = (scrollParent(this.panelElement) ?? this.panelElement).getBoundingClientRect();
     const covers = p.left <= m.left + 1 && p.right >= m.right - 1 && p.top > m.top && p.top < m.bottom;
     return covers ? { ...padding, bottom: m.bottom - p.top + 40 } : { ...padding, top: 0, left: 0, right: 0 };
   }

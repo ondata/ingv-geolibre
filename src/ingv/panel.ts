@@ -2,7 +2,7 @@ import { areaCombo } from "./area-combo";
 import { sortEvents, type Controller } from "./controller";
 import { wrapsWorld } from "./countries";
 import { renderDetail } from "./detail";
-import { dot, el, extLink } from "./dom";
+import { dot, el, extLink, scrollParent } from "./dom";
 import { eventDate, formatDepth, formatMagnitude, italyDateShort, italyTime } from "./format";
 import { DEPTH_CLASSES, depthColor } from "./layer";
 import { DEFAULT_MAGNITUDE, DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
@@ -86,12 +86,21 @@ export function renderPanel(ctl: Controller, container: HTMLElement): () => void
         detailFor = selected.properties.eventId;
       }
       if (search.element.isConnected) search.element.remove();
-      if (!detail!.isConnected) foot.before(detail!);
+      if (!detail!.isConnected) {
+        foot.before(detail!);
+        // On a phone GeoLibre's container scrolls, not the panel: a detail opened from far down the list starts at its top.
+        const scroller = scrollParent(root);
+        if (scroller) scroller.scrollTop = 0;
+      }
     } else {
       detail?.remove();
       detail = null;
       detailFor = null;
-      if (!search.element.isConnected) foot.before(search.element);
+      if (!search.element.isConnected) {
+        foot.before(search.element);
+        const scroller = scrollParent(root);
+        if (scroller) scroller.scrollTop = 0;
+      }
       search.refresh();
     }
   }
@@ -210,14 +219,13 @@ function buildSearch(ctl: Controller) {
     ),
   );
   const depthButtons = [...legend.querySelectorAll<HTMLButtonElement>(".ingq-depth")];
-  const searchButton = el("button", { type: "button", class: "ingq-primary", onclick: () => void ctl.run() }, "Search");
+  const searchButton = el("button", { type: "button", class: "ingq-primary ingq-search-btn", onclick: () => void ctl.run() }, "Search");
   const result = el(
     "div",
     { class: "ingq-group ingq-result" },
     searchButton,
     el("div", { class: "ingq-row" }, el("div", {}, count, strongest), el("div", { class: "ingq-links" }, zoomLink, tableLink)),
     message,
-    legend,
   );
 
   // More filters
@@ -237,7 +245,7 @@ function buildSearch(ctl: Controller) {
   const moreBody = el(
     "div",
     { class: "ingq-more-body" },
-    el("div", { class: "ingq-group ingq-tight" }, el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Depth"), depthText), depthSlider.element),
+    el("div", { class: "ingq-group ingq-tight" }, el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Depth range"), depthText), depthSlider.element),
     el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Order"), order),
     el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Limit"), limit),
   );
@@ -259,7 +267,14 @@ function buildSearch(ctl: Controller) {
   // period stays on top, then two tabs, the results as a list and the filters.
   let tab: "results" | "filters" = "results";
   const tabButton = (id: typeof tab, label: string) =>
-    el("button", { type: "button", class: "ingq-tab", onclick: () => ((tab = id), refresh()) }, label);
+    el("button", { type: "button", class: "ingq-tab", onclick: () => switchTab(id) }, label);
+  // A tab opens at its top, not at the scroll of the other one.
+  const switchTab = (id: typeof tab) => {
+    tab = id;
+    refresh();
+    const scroller = scrollParent(element);
+    if (scroller) scroller.scrollTop = 0;
+  };
   const resultsTab = tabButton("results", "Results");
   const filtersTab = tabButton("filters", "Filters");
   const tabs = el("div", { class: "ingq-tabs" }, resultsTab, filtersTab);
@@ -283,10 +298,10 @@ function buildSearch(ctl: Controller) {
       }),
     );
   }
-  for (const [node, where] of [[time, "both"], [tabs, "both"], [result, "results"], [list, "results"], [liveRow, "filters"], [magnitude, "filters"], [area, "filters"], [more, "filters"]] as const)
+  for (const [node, where] of [[time, "both"], [tabs, "both"], [result, "results"], [list, "results"], [legend, "filters"], [liveRow, "filters"], [magnitude, "filters"], [area, "filters"], [more, "filters"]] as const)
     node.dataset.tab = where;
 
-  const element = el("div", { class: "ingq-search" }, liveRow, time, tabs, magnitude, area, result, list, more);
+  const element = el("div", { class: "ingq-search" }, liveRow, time, tabs, magnitude, area, result, legend, list, more);
 
   // Click on the map moves the centre of "Around".
   const map = ctl.app.getMap?.();
@@ -358,6 +373,7 @@ function buildSearch(ctl: Controller) {
       s.magnitude[0] !== DEFAULT_MAGNITUDE[0] || s.magnitude[1] !== DEFAULT_MAGNITUDE[1],
       s.area !== "view",
       s.depth[0] !== DEPTH_SCALE.min || s.depth[1] !== DEPTH_SCALE.max,
+      s.depthOn.some((on) => !on),
     ].filter(Boolean).length;
     filtersTab.textContent = changed ? `Filters · ${changed}` : "Filters";
     drawList();
