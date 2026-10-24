@@ -1,5 +1,10 @@
 # Log
 
+## 2026-10-24
+
+- **Registry**: PR opengeos/geolibre-plugins#121 merged by giswqs (02:56 UTC), entry 0.2.0. Checked headed with a fresh profile: `https://web.geolibre.app/?plugin=ingv-geolibre&ingvTime=30d&ingvMag=4.5,8&ingvArea=country&ingvCountry=GR` shows "Install this plugin?" (INGV Earthquakes v0.2.0, by onData), then "Trust and load" opens the panel on Greece, 3 earthquakes.
+- **Minimap**: opengeos/GeoLibre#3188 closed by #3190 (merged 04:06 UTC): `openControlPanel`, `closeControlPanel`, `isControlPanelVisible` for bookmark, search, measure, minimap, print; the Minimap takes `zoomOffset`, `width`, `height`. On web.geolibre.app already, not in a release yet (latest 3.4.0). The plugin now opens the Minimap at `zoomOffset: -6` when it turns on, at 768 px and wider, and closes it on deactivation only if it opened it. Checked headed with the local build: overview of all Italy around a box near L'Aquila; closing the panel closes the Minimap. Not checked on a phone width.
+
 ## 2026-10-23
 
 - **0.2.0 released** with share links (zip sha256 `2f5d539a2b6ea57e14aba7afd3c291e74868206732e46de98a1f6cbc8427b354`, checked on the download). Registry PR opengeos/geolibre-plugins#121 updated to 0.2.0 (entry, title, description); `npm run validate` and pre-commit pass locally.

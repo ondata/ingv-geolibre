@@ -63,12 +63,17 @@ export const plugin: Plugin = {
     // The catalogue is regional: a flat map reads better than the globe GeoLibre opens on.
     const map = host.getMap?.();
     if (map?.getProjection?.()?.type === "globe") map.setProjection?.({ type: "mercator" });
+    // A sequence is often seen at zoom 10-11: a wider overview shows the region
+    // around it. Not on a phone, where the panel already covers the bottom of the map.
+    const openedMinimap = window.innerWidth >= 768 && host.isControlPanelVisible?.("minimap") === false;
+    if (window.innerWidth >= 768) host.openControlPanel?.("minimap", { zoomOffset: -6 });
     app.openRightPanel?.(PANEL_ID);
     // A first search with the defaults, so the panel opens on the earthquakes.
     void ctl.run();
     activeCtl = ctl;
     disposePanel = () => {
       activeCtl = null;
+      if (openedMinimap) host.closeControlPanel?.("minimap");
       unregisterTable?.();
       app.closeRightPanel?.(PANEL_ID);
       unregister();

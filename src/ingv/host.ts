@@ -61,6 +61,10 @@ export interface IngvHostExtras {
   fetchVectorUrl?: (url: string) => Promise<File | null>;
   /** Save a text file through the system "Save as" dialog (GeoLibre 3.1.0). */
   exportTextFile?: (filename: string, content: string, options?: { description?: string; extensions?: string[]; mimeType?: string }) => Promise<unknown> | unknown;
+  /** GeoLibre's built-in Minimap, with its zoom relative to the main map (opengeos/GeoLibre#3190, after 3.4.0). */
+  openControlPanel?: (id: "minimap", options?: { zoomOffset?: number; width?: number; height?: number }) => void;
+  closeControlPanel?: (id: "minimap") => void;
+  isControlPanelVisible?: (id: "minimap") => boolean;
 }
 
 export type IngvHost = GeoLibreAppAPI & IngvHostExtras;

@@ -11,7 +11,7 @@ Status: **beta**, open for testing.
 ## What it does
 
 - **Search**: period (1 hour to 1 year, or a custom range with time), magnitude range, area (the map view, around a point, the whole world, or one of 173 countries), depth classes, order and limit. Every change runs a new search on the INGV service.
-- **Map**: one circle per event, colour by depth (0-10, 10-30, 30-100, over 100 km), size by magnitude. A click opens the event. **Live zoom** fits the map to the results at every change.
+- **Map**: one circle per event, colour by depth (0-10, 10-30, 30-100, over 100 km), size by magnitude. A click opens the event. **Live zoom** fits the map to the results at every change. On wide screens the plugin opens GeoLibre's Minimap with a wider overview than its default (GeoLibre web today, Desktop from the release after 3.4.0).
 - **Results table**: sortable, hover to find the event on the map, export to CSV or GeoJSON, **Add to layers** to keep a search in the project.
 - **Event detail**: time in Italy and UTC, position, depth, magnitude type; the ShakeMap maps when INGV made one; the felt reports map; how location and magnitude changed after the first estimate; a search of the seismicity around the event; a link to the event page on [terremoti.ingv.it](https://terremoti.ingv.it).
 - **Share**: the Share button at the bottom of the panel gives a GeoLibre web link that opens the same search for anyone: period, magnitude, depth, area (the exact box of the map view, the point and radius, or the country), order and limit, plus the event when one is open. A preset period stays relative: a "24 h" link shows the last 24 hours when it is opened.
