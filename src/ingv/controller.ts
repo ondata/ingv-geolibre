@@ -4,6 +4,7 @@ import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
+import { dateLocale, presetLabel, tr } from "./i18n";
 import { DEFAULT_MINIMAP, type Link, type Minimap, type Shared } from "./url-params";
 import {
   buildQueryUrl,
@@ -14,7 +15,6 @@ import {
   DEPTH_SCALE,
   MAGNITUDE_SCALE,
   presetStart,
-  TIME_PRESETS,
   type Bbox,
   type EventFilter,
   type OrderBy,
@@ -232,13 +232,13 @@ export class Controller {
 
   async run() {
     if (!this.app.addGeoJsonLayer) {
-      this.update({ status: "error", message: "This version of GeoLibre cannot add layers from plugins." });
+      this.update({ status: "error", message: tr("error.noLayers", "This version of GeoLibre cannot add layers from plugins.") });
       return;
     }
     this.running?.abort();
     const controller = new AbortController();
     this.running = controller;
-    this.update({ status: "loading", message: "Searching…" });
+    this.update({ status: "loading", message: tr("status.searching", "Searching…") });
     try {
       const view = this.searchedView();
       const now = new Date();
@@ -257,7 +257,7 @@ export class Controller {
       if (controller.signal.aborted) return;
       const message =
         error instanceof DOMException && error.name === "TimeoutError"
-          ? "The INGV service did not answer in time."
+          ? tr("error.timeout", "The INGV service did not answer in time.")
           : error instanceof Error
             ? error.message
             : String(error);
@@ -312,13 +312,16 @@ export class Controller {
   hiddenNote(): string {
     const n = this.state.hiddenCount;
     if (!n) return "";
-    return `${n.toLocaleString("en")}${n >= this.search.limit ? "+" : ""} in hidden depth classes`;
+    return tr("result.hidden", "{{n}} in hidden depth classes", { n: `${n.toLocaleString(dateLocale())}${n >= this.search.limit ? "+" : ""}` });
   }
 
   /** Name of the search, for the table and a saved layer: "7 days, M 2-8". */
   describe(): string {
     const s = this.search;
-    const period = s.time === "custom" ? `${s.from.replace("T", " ")} to ${s.to.replace("T", " ")}` : TIME_PRESETS.find((p) => p.id === s.time)!.label;
+    const period =
+      s.time === "custom"
+        ? tr("describe.range", "{{from}} to {{to}}", { from: s.from.replace("T", " "), to: s.to.replace("T", " ") })
+        : presetLabel(s.time);
     return `${period}, M ${s.magnitude[0]}-${s.magnitude[1]}`;
   }
 
@@ -407,7 +410,7 @@ export class Controller {
       }
     }
     if (feature) this.select(feature);
-    else this.update({ message: `Event ${eventId} not found in the INGV catalogue.` });
+    else this.update({ message: tr("error.eventNotFound", "Event {{id}} not found in the INGV catalogue.", { id: eventId }) });
   }
 
   /**
@@ -489,7 +492,7 @@ export class Controller {
 
   /** Keep the current search in the project as a layer of the Layers panel. */
   saveToProject() {
-    if (this.state.events && this.app.addGeoJsonLayer) addToProject(this.app, this.state.events, `${LAYER_NAME}, ${this.describe()}`);
+    if (this.state.events && this.app.addGeoJsonLayer) addToProject(this.app, this.state.events, `${tr("layer.name", LAYER_NAME)}, ${this.describe()}`);
   }
 
   /** The search of the detail's "Seismicity around": a year, any magnitude, 30 km. */

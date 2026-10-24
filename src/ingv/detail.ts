@@ -3,6 +3,7 @@ import { dot, el, extLink, probeImage } from "./dom";
 import { eventPageUrl, type EventFeature } from "./events";
 import { eventDate, formatDepth, formatMagnitude, italyDateIso, italyDateLong, italyTime, utcDateIso, utcTime } from "./format";
 import { depthColor } from "./layer";
+import { tr } from "./i18n";
 import { shareButton } from "./share";
 import {
   feltMapUrl,
@@ -43,7 +44,7 @@ function section(title: string, load: (body: HTMLElement) => void | Promise<void
 const thumb = (src: string, label: string, cls: string) =>
   el("a", { href: src, target: "_blank", rel: "noopener noreferrer", class: "ingq-thumb" }, el("img", { src, alt: label, loading: "lazy", class: cls }), el("span", {}, label));
 
-const loading = (body: HTMLElement, text = "Loading…") => body.replaceChildren(el("div", { class: "ingq-muted" }, text));
+const loading = (body: HTMLElement, text = tr("detail.loading", "Loading…")) => body.replaceChildren(el("div", { class: "ingq-muted" }, text));
 
 /** Read a GeoJSON product: the browser when the server allows it, else GeoLibre Desktop's own downloader. */
 async function readJson(ctl: Controller, url: string): Promise<unknown | null> {
@@ -63,7 +64,7 @@ export function renderDetail(ctl: Controller, feature: EventFeature): HTMLElemen
   const date = eventDate(p.time);
   const [lon, lat] = feature.geometry.coordinates;
 
-  const back = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.backToSearch()) }, "← Back to search");
+  const back = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.backToSearch()) }, tr("detail.back", "← Back to search"));
   const header = el(
     "div",
     { class: "ingq-det-head" },
@@ -76,82 +77,82 @@ export function renderDetail(ctl: Controller, feature: EventFeature): HTMLElemen
         "div",
         { class: "ingq-det-text" },
         el("div", { class: "ingq-det-place" }, p.place),
-        el("div", { class: "ingq-muted" }, `${italyDateLong(date)} · ${italyTime(date)} Italy`),
-        el("div", { class: "ingq-muted ingq-inline" }, dot(depthColor(p.depth)), `${formatDepth(p.depth)} km deep`),
+        el("div", { class: "ingq-muted" }, tr("detail.when", "{{date}} · {{time}} Italy", { date: italyDateLong(date), time: italyTime(date) })),
+        el("div", { class: "ingq-muted ingq-inline" }, dot(depthColor(p.depth)), tr("detail.deep", "{{depth}} km deep", { depth: formatDepth(p.depth) })),
       ),
     ),
   );
 
   const kv = (k: string, v: string, mono = false) => [el("span", { class: "ingq-muted" }, k), el("span", { class: mono ? "ingq-mono" : "" }, v)];
   const summary = section(
-    "Summary",
+    tr("detail.summary", "Summary"),
     (body) =>
       body.replaceChildren(
         el(
           "div",
           { class: "ingq-kv" },
-          ...kv("Magnitude", `${formatMagnitude(p.mag)} ${p.magType}`),
-          ...kv("Time UTC", `${utcDateIso(date)} ${utcTime(date)}`, true),
-          ...kv("Time Italy", `${italyDateIso(date)} ${italyTime(date)}`, true),
-          ...kv("Depth", `${formatDepth(p.depth)} km`),
-          ...kv("Position", `${lat.toFixed(2)} N, ${lon.toFixed(2)} E`, true),
-          ...kv("Located by", p.author),
-          ...kv("Event ID", String(id), true),
-          extLink(eventPageUrl(id), "Open on terremoti.ingv.it ↗", "ingq-kv-wide"),
+          ...kv(tr("detail.magnitude", "Magnitude"), `${formatMagnitude(p.mag)} ${p.magType}`),
+          ...kv(tr("detail.timeUtc", "Time UTC"), `${utcDateIso(date)} ${utcTime(date)}`, true),
+          ...kv(tr("detail.timeItaly", "Time Italy"), `${italyDateIso(date)} ${italyTime(date)}`, true),
+          ...kv(tr("detail.depth", "Depth"), `${formatDepth(p.depth)} km`),
+          ...kv(tr("detail.position", "Position"), `${lat.toFixed(2)} N, ${lon.toFixed(2)} E`, true),
+          ...kv(tr("detail.locatedBy", "Located by"), p.author),
+          ...kv(tr("detail.eventId", "Event ID"), String(id), true),
+          extLink(eventPageUrl(id), tr("detail.open", "Open on terremoti.ingv.it ↗"), "ingq-kv-wide"),
         ),
       ),
     true,
   );
 
   // Shown only when the event has a ShakeMap.
-  const shake = section("Shaking (ShakeMap)", (body) => {
+  const shake = section(tr("detail.shake", "Shaking (ShakeMap)"), (body) => {
     const base = shakeMapBase(id);
     const buttons = SHAKEMAP_LAYERS.map((layer) => {
       const note = el("span", { class: "ingq-muted" });
-      const button = el("button", { type: "button", class: "ingq-secondary" }, el("span", {}, layer.label), note);
+      const button = el("button", { type: "button", class: "ingq-secondary" }, el("span", {}, tr(`shake.layer.${layer.file}`, layer.label)), note);
       button.addEventListener("click", async () => {
         button.disabled = true;
-        note.textContent = "Loading…";
+        note.textContent = tr("detail.loading", "Loading…");
         const json = await readJson(ctl, `${base}/${layer.file}`);
         if (json && ctl.app.addGeoJsonLayer) {
-          ctl.app.addGeoJsonLayer(`${layer.name} ${id}`, json as { type: "FeatureCollection"; features: unknown[] });
-          note.textContent = "Added";
+          ctl.app.addGeoJsonLayer(`${tr(`shake.name.${layer.file}`, layer.name)} ${id}`, json as { type: "FeatureCollection"; features: unknown[] });
+          note.textContent = tr("detail.added", "Added");
         } else {
-          note.textContent = "Desktop only";
+          note.textContent = tr("detail.desktopOnly", "Desktop only");
           button.disabled = false;
         }
       });
       return button;
     });
     body.replaceChildren(
-      el("div", { class: "ingq-thumbs ingq-thumbs-3" }, ...SHAKEMAP_IMAGES.map((i) => thumb(`${base}/${i.file}`, i.label, "ingq-img-tall"))),
+      el("div", { class: "ingq-thumbs ingq-thumbs-3" }, ...SHAKEMAP_IMAGES.map((i) => thumb(`${base}/${i.file}`, tr(`shake.image.${i.file}`, i.label), "ingq-img-tall"))),
       el("div", { class: "ingq-stack" }, ...buttons),
     );
   });
   shake.hidden = true;
   void probeImage(`${shakeMapBase(id)}/intensity.jpg`).then((ok) => (shake.hidden = !ok));
 
-  const felt = section("Felt reports", async (body) => {
+  const felt = section(tr("detail.felt", "Felt reports"), async (body) => {
     loading(body);
     const src = feltMapUrl(id);
     const ok = await probeImage(src);
     body.replaceChildren(
-      ok ? thumb(src, "Intensity by municipality, from the “Hai sentito il terremoto?” questionnaires.", "ingq-img-wide") : el("div", { class: "ingq-muted" }, "No felt reports map for this event yet."),
-      extLink(feltQuestionnaireUrl(id), "Did you feel it? Fill in the questionnaire ↗"),
+      ok ? thumb(src, tr("detail.feltMap", "Intensity by municipality, from the “Hai sentito il terremoto?” questionnaires."), "ingq-img-wide") : el("div", { class: "ingq-muted" }, tr("detail.noFelt", "No felt reports map for this event yet.")),
+      extLink(feltQuestionnaireUrl(id), tr("detail.questionnaire", "Did you feel it? Fill in the questionnaire ↗")),
     );
   });
 
-  const history = section("Location and magnitude history", async (body) => {
-    loading(body, "Loading QuakeML…");
+  const history = section(tr("detail.history", "Location and magnitude history"), async (body) => {
+    loading(body, tr("detail.loadingQuakeml", "Loading QuakeML…"));
     try {
       const response = await fetch(quakeMlUrl(id));
       if (!response.ok) throw new Error(String(response.status));
       const rows = parseHistory(await response.text());
       if (!rows.length) {
-        loading(body, "No history for this event.");
+        loading(body, tr("detail.noHistory", "No history for this event."));
         return;
       }
-      const head = ["UTC", "Status", "Mag", "Depth"].map((h, i) => el("span", { class: `ingq-th${i > 1 ? " ingq-right" : ""}` }, h));
+      const head = ["UTC", tr("detail.status", "Status"), tr("detail.mag", "Mag"), tr("detail.depth", "Depth")].map((h, i) => el("span", { class: `ingq-th${i > 1 ? " ingq-right" : ""}` }, h));
       body.replaceChildren(
         el(
           "div",
@@ -161,24 +162,24 @@ export function renderDetail(ctl: Controller, feature: EventFeature): HTMLElemen
             const strong = r.preferred ? " ingq-strong" : "";
             return [
               el("span", { class: "ingq-mono" }, formatDelay(r.delay)),
-              el("span", { class: strong.trim() }, `${r.automatic ? "Automatic" : "Revised"}${r.preferred ? " (preferred)" : ""}`),
+              el("span", { class: strong.trim() }, `${r.automatic ? tr("detail.automatic", "Automatic") : tr("detail.revised", "Revised")}${r.preferred ? tr("detail.preferred", " (preferred)") : ""}`),
               el("span", { class: `ingq-mono ingq-right${strong}` }, `${formatMagnitude(r.magnitude)} ${r.magType}`),
               el("span", { class: "ingq-mono ingq-right" }, r.depth === null ? "" : `${formatDepth(r.depth)} km`),
             ];
           }),
         ),
-        el("div", { class: "ingq-muted ingq-note" }, "UTC: time from the earthquake to the publication."),
+        el("div", { class: "ingq-muted ingq-note" }, tr("detail.utcNote", "UTC: time from the earthquake to the publication.")),
       );
     } catch {
-      loading(body, "The INGV service did not send the history.");
+      loading(body, tr("detail.historyError", "The INGV service did not send the history."));
     }
   });
 
-  const around = section("Seismicity around", (body) =>
+  const around = section(tr("detail.around", "Seismicity around"), (body) =>
     body.replaceChildren(
-      el("button", { type: "button", class: "ingq-accent", onclick: () => ctl.searchAround(feature) }, "Search around this event (30 km)"),
-      el("div", { class: "ingq-muted" }, "INGV maps"),
-      el("div", { class: "ingq-thumbs ingq-thumbs-2" }, ...SEISMICITY_MAPS.map((m) => thumb(seismicityMapUrl(id, m.map), m.label, "ingq-img-map"))),
+      el("button", { type: "button", class: "ingq-accent", onclick: () => ctl.searchAround(feature) }, tr("detail.searchAround", "Search around this event (30 km)")),
+      el("div", { class: "ingq-muted" }, tr("detail.maps", "INGV maps")),
+      el("div", { class: "ingq-thumbs ingq-thumbs-2" }, ...SEISMICITY_MAPS.map((m) => thumb(seismicityMapUrl(id, m.map), tr(`seismicity.${m.map}`, m.label), "ingq-img-map"))),
     ),
   );
 

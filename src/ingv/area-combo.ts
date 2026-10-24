@@ -1,14 +1,15 @@
 import type { Area } from "./controller";
-import { COUNTRIES, matchCountries, type Country } from "./countries";
+import { COUNTRIES, countryName, matchCountries, type Country } from "./countries";
 import { el } from "./dom";
+import { tr } from "./i18n";
 
-const FIXED: { area: Exclude<Area, "country">; label: string; note: string }[] = [
-  { area: "view", label: "Map view", note: "default" },
-  { area: "around", label: "Around a point…", note: "" },
-  { area: "world", label: "World", note: "" },
+const FIXED: { area: Exclude<Area, "country">; label: () => string; note: () => string }[] = [
+  { area: "view", label: () => tr("area.view", "Map view"), note: () => tr("area.default", "default") },
+  { area: "around", label: () => tr("area.around", "Around a point…"), note: () => "" },
+  { area: "world", label: () => tr("area.world", "World"), note: () => "" },
 ];
 
-type Option = { area: Exclude<Area, "country">; label: string; note: string } | { area: "country"; country: Country };
+type Option = (typeof FIXED)[number] | { area: "country"; country: Country };
 
 /**
  * The area as a button that opens a list: map view, around a point, world, or
@@ -16,10 +17,10 @@ type Option = { area: Exclude<Area, "country">; label: string; note: string } | 
  * the search field at the top of the list.
  */
 export function areaCombo(onPick: (area: Area, country: Country | null) => void) {
-  const label = el("span", {}, "Map view");
+  const label = el("span", {}, tr("area.view", "Map view"));
   const chev = el("span", { class: "ingq-combo-chev" }, "▼");
   const button = el("button", { type: "button", class: "ingq-combo-button", "aria-haspopup": "listbox" }, label, chev);
-  const input = el("input", { class: "ingq-combo-search", type: "text", placeholder: "Search a country…", autocomplete: "off", spellcheck: false, "aria-label": "Search a country" });
+  const input = el("input", { class: "ingq-combo-search", type: "text", placeholder: tr("area.searchPlaceholder", "Search a country…"), autocomplete: "off", spellcheck: false, "aria-label": tr("area.search", "Search a country") });
   const list = el("div", { class: "ingq-combo-items", role: "listbox" });
   const popup = el("div", { class: "ingq-combo-list" }, el("div", { class: "ingq-combo-field" }, input), list);
   const element = el("div", { class: "ingq-combo" }, button, popup);
@@ -28,12 +29,12 @@ export function areaCombo(onPick: (area: Area, country: Country | null) => void)
   let active = 0;
   let options: Option[] = [];
 
-  const labelOf = (o: Option) => (o.area === "country" ? o.country.name : o.label);
+  const labelOf = (o: Option) => (o.area === "country" ? countryName(o.country) : o.label());
 
   function drawList() {
     const query = input.value;
     const q = query.trim().toLowerCase();
-    const fixed = FIXED.filter((o) => !q || o.label.toLowerCase().includes(q));
+    const fixed = FIXED.filter((o) => !q || o.label().toLowerCase().includes(q));
     const countries = q ? matchCountries(query) : COUNTRIES;
     options = [...fixed, ...countries.map((country) => ({ area: "country" as const, country }))];
     active = Math.min(active, Math.max(options.length - 1, 0));
@@ -48,14 +49,14 @@ export function areaCombo(onPick: (area: Area, country: Country | null) => void)
           onmouseenter: () => mark(i),
         },
         el("span", {}, labelOf(o)),
-        el("span", { class: o.area === "country" ? "ingq-combo-code" : "ingq-combo-note" }, o.area === "country" ? o.country.code : o.note),
+        el("span", { class: o.area === "country" ? "ingq-combo-code" : "ingq-combo-note" }, o.area === "country" ? o.country.code : o.note()),
       );
     list.replaceChildren(
       ...fixed.map(row),
-      el("div", { class: "ingq-combo-head" }, `Countries · ${countries.length}`),
+      el("div", { class: "ingq-combo-head" }, tr("area.countries", "Countries · {{n}}", { n: countries.length })),
       ...countries.map((country, i) => row({ area: "country", country }, i + fixed.length)),
     );
-    if (q && !options.length) list.append(el("div", { class: "ingq-combo-none" }, `No country matches “${query.trim()}”.`));
+    if (q && !options.length) list.append(el("div", { class: "ingq-combo-none" }, tr("area.noMatch", "No country matches “{{query}}”.", { query: query.trim() })));
     list.querySelector(".ingq-combo-item.ingq-on")?.scrollIntoView({ block: "nearest" });
   }
 
@@ -103,7 +104,7 @@ export function areaCombo(onPick: (area: Area, country: Country | null) => void)
     element,
     /** Show the current area on the button. */
     show(area: Area, country: Country | null) {
-      label.textContent = area === "country" && country ? country.name : (FIXED.find((o) => o.area === area)?.label ?? "Map view");
+      label.textContent = area === "country" && country ? countryName(country) : (FIXED.find((o) => o.area === area)?.label() ?? tr("area.view", "Map view"));
     },
   };
 }

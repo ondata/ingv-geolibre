@@ -65,6 +65,11 @@ export interface IngvHostExtras {
   openControlPanel?: (id: "minimap", options?: { zoomOffset?: number; width?: number; height?: number }) => void;
   closeControlPanel?: (id: "minimap") => void;
   isControlPanelVisible?: (id: "minimap") => boolean;
+  /** GeoLibre's language and its i18n (GeoLibre 3.4.0, "Following the app language"). */
+  getLocale?: () => string;
+  onLocaleChange?: (listener: (locale: string) => void) => () => void;
+  translate?: (key: string, defaultValue: string, params?: Record<string, string | number>) => string;
+  registerTranslations?: (resources: Record<string, Record<string, string>>) => void;
   /** A tool of GeoLibre's AI Assistant while the plugin is on (GeoLibre 3.0); returns the disposer. */
   registerAssistantToolSpec?: (spec: AssistantToolSpec) => () => void;
   /** Text added to the assistant's system prompt while the plugin is on (GeoLibre 3.1); returns the disposer. */

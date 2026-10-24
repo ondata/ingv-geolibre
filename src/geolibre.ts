@@ -5,6 +5,7 @@ import type { IngvHost } from "./ingv/host";
 import { renderPanel } from "./ingv/panel";
 import { renderTable } from "./ingv/table";
 import { syncAddress } from "./ingv/address";
+import { bindLanguage, onLanguageChange, tr } from "./ingv/i18n";
 import { registerAssistantTools } from "./ingv/assistant";
 import { linkFrom, URL_PARAMETER_NAMES } from "./ingv/url-params";
 import "./ingv/panel.css";
@@ -24,6 +25,21 @@ type Plugin = GeoLibrePlugin & {
 };
 
 let disposePanel: (() => void) | null = null;
+
+/** Render a panel again when GeoLibre's language changes: its labels are built once. */
+function followingLanguage(render: (container: HTMLElement) => () => void) {
+  return (container: HTMLElement) => {
+    let dispose = render(container);
+    const stop = onLanguageChange(() => {
+      dispose();
+      dispose = render(container);
+    });
+    return () => {
+      stop();
+      dispose();
+    };
+  };
+}
 let activeCtl: Controller | null = null;
 /** Starts keeping the address on the search, once; set while the plugin is on. */
 let startAddress: (() => void) | null = null;
@@ -40,23 +56,25 @@ export const plugin: Plugin = {
   activate(app) {
     if (!app.registerRightPanel) return false;
     const host = app as IngvHost;
+    bindLanguage(host);
     const ctl = new Controller(host);
     const unregister = app.registerRightPanel({
       id: PANEL_ID,
-      title: PLUGIN_LABEL,
+      // "Terremoti INGV" in Italian; the Plugins menu keeps the manifest's name.
+      title: () => PLUGIN_LABEL.replace("INGV Earthquakes", tr("title", "INGV Earthquakes")),
       defaultWidth: 380,
       // The panel is the plugin's whole UI: closing it with X turns the plugin
       // off, so the Plugins menu check mark follows (GeoLibre host option).
       deactivatePluginOnClose: true,
-      render: (container: HTMLElement) => renderPanel(ctl, container),
+      render: followingLanguage((container) => renderPanel(ctl, container)),
     } as Parameters<NonNullable<typeof app.registerRightPanel>>[0]);
     const unregisterTable = host.registerFloatingPanel?.({
       id: TABLE_ID,
-      title: "Results",
+      title: () => tr("table.title", "Results"),
       defaultWidth: 600,
       defaultHeight: 300,
       position: "bottom-left",
-      render: (container: HTMLElement) => renderTable(ctl, container),
+      render: followingLanguage((container) => renderTable(ctl, container)),
       onOpen: () => ctl.update({ tableOpen: true }),
       onClose: () => ctl.update({ tableOpen: false }),
     });

@@ -1,5 +1,6 @@
 import type { EventCollection, EventFeature } from "./events";
 import { eventPageUrl } from "./events";
+import { dateLocale } from "./i18n";
 
 /** The service's times are UTC without the `Z`. */
 export const eventDate = (time: string) => new Date(`${time.replace(/Z$/, "")}Z`);
@@ -8,8 +9,11 @@ const italy = (options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", ...options });
 const ITALY_DATE = italy({ year: "numeric", month: "2-digit", day: "2-digit" });
 const ITALY_TIME = italy({ hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
-const ITALY_LONG = italy({ day: "numeric", month: "long", year: "numeric" });
-const ITALY_SHORT = italy({ day: "numeric", month: "short" });
+/** Dates with month names follow the interface language; the numeric ones above do not need to. */
+const named = (options: Intl.DateTimeFormatOptions) => (date: Date) =>
+  new Intl.DateTimeFormat(dateLocale(), { timeZone: "Europe/Rome", ...options }).format(date);
+const ITALY_LONG = named({ day: "numeric", month: "long", year: "numeric" });
+const ITALY_SHORT = named({ day: "numeric", month: "short" });
 
 /** `2026-10-23` in Italy. */
 export function italyDateIso(date: Date): string {
@@ -18,8 +22,8 @@ export function italyDateIso(date: Date): string {
 }
 
 export const italyTime = (date: Date) => ITALY_TIME.format(date);
-export const italyDateLong = (date: Date) => ITALY_LONG.format(date);
-export const italyDateShort = (date: Date) => ITALY_SHORT.format(date);
+export const italyDateLong = ITALY_LONG;
+export const italyDateShort = ITALY_SHORT;
 export const utcDateIso = (date: Date) => date.toISOString().slice(0, 10);
 export const utcTime = (date: Date) => date.toISOString().slice(11, 19);
 

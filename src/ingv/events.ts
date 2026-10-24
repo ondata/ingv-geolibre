@@ -1,3 +1,4 @@
+import { tr } from "./i18n";
 /** Give up on a search after this long. */
 export const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -46,7 +47,7 @@ function eventLink(eventId: number): string {
  */
 export function normalizeEvents(json: unknown): EventCollection {
   const features = (json as { features?: unknown[] } | null)?.features;
-  if (!Array.isArray(features)) throw new Error("The INGV service sent an answer that is not GeoJSON.");
+  if (!Array.isArray(features)) throw new Error(tr("error.notGeojson", "The INGV service sent an answer that is not GeoJSON."));
   return {
     type: "FeatureCollection",
     features: features.map((raw) => {
@@ -79,7 +80,7 @@ export async function fetchEvents(url: string, signal?: AbortSignal): Promise<Ev
   const response = await fetch(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
   if (response.status === 204) return { type: "FeatureCollection", features: [] };
   if (!response.ok) {
-    throw new Error(`The INGV service answered ${response.status}: ${errorText(await response.text())}`);
+    throw new Error(tr("error.status", "The INGV service answered {{status}}: {{text}}", { status: response.status, text: errorText(await response.text()) }));
   }
   return normalizeEvents(await response.json());
 }

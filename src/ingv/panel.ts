@@ -7,13 +7,14 @@ import { eventDate, formatDepth, formatMagnitude, italyDateShort, italyTime } fr
 import { DEPTH_CLASSES, depthColor } from "./layer";
 import { DEFAULT_MAGNITUDE, DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
 import { rangeSlider } from "./range-slider";
+import { dateLocale, presetLabel, tr, trCount } from "./i18n";
 import { shareButton } from "./share";
 
-const ORDERS: { id: OrderBy; label: string }[] = [
-  { id: "time", label: "Newest first" },
-  { id: "time-asc", label: "Oldest first" },
-  { id: "magnitude", label: "Magnitude, largest first" },
-  { id: "magnitude-asc", label: "Magnitude, smallest first" },
+const ORDERS: { id: OrderBy; label: () => string }[] = [
+  { id: "time", label: () => tr("order.time", "Newest first") },
+  { id: "time-asc", label: () => tr("order.timeAsc", "Oldest first") },
+  { id: "magnitude", label: () => tr("order.magnitude", "Magnitude, largest first") },
+  { id: "magnitude-asc", label: () => tr("order.magnitudeAsc", "Magnitude, smallest first") },
 ];
 
 const sectionTitle = (text: string) => el("div", { class: "ingq-label" }, text);
@@ -37,35 +38,38 @@ function footer(ctl: Controller): HTMLElement {
   const about = el(
     "div",
     { class: "ingq-about" },
-    el("div", { class: "ingq-row" }, el("strong", {}, "About the data"), el("button", { type: "button", class: "ingq-close", "aria-label": "Close", onclick: () => toggle() }, "×")),
-    el("p", {}, "Earthquake locations and magnitudes come from the Istituto Nazionale di Geofisica e Vulcanologia (INGV), through its FDSN event web service."),
+    el("div", { class: "ingq-row" }, el("strong", {}, tr("about.title", "About the data")), el("button", { type: "button", class: "ingq-close", "aria-label": tr("about.close", "Close"), onclick: () => toggle() }, "×")),
+    el("p", {}, tr("about.source", "Earthquake locations and magnitudes come from the Istituto Nazionale di Geofisica e Vulcanologia (INGV), through its FDSN event web service.")),
     // Measured over the 30 days before 2026-10-23 (see LOG.md, "Coverage measured").
     el(
       "p",
       {},
-      "The catalogue is detailed for Italy and its seas, down to the smallest events (M 0.1). Elsewhere INGV lists only the stronger earthquakes: in the rest of Europe and the Mediterranean from about M 4.5, in the rest of the world from about M 5.5.",
+      tr(
+        "about.coverage",
+        "The catalogue is detailed for Italy and its seas, down to the smallest events (M 0.1). Elsewhere INGV lists only the stronger earthquakes: in the rest of Europe and the Mediterranean from about M 4.5, in the rest of the world from about M 5.5.",
+      ),
     ),
     el(
       "div",
       { class: "ingq-about-grid" },
-      ...row("Source", extLink("https://terremoti.ingv.it", "terremoti.ingv.it")),
-      ...row("Web service", extLink("https://webservices.ingv.it/swagger-ui/dist/?url=https://ingv.github.io/openapi/fdsnws/event/0.0.1/event.yaml", "webservices.ingv.it/fdsnws/event/1")),
+      ...row(tr("about.source", "Source"), extLink("https://terremoti.ingv.it", "terremoti.ingv.it")),
+      ...row(tr("about.webService", "Web service"), extLink("https://webservices.ingv.it/swagger-ui/dist/?url=https://ingv.github.io/openapi/fdsnws/event/0.0.1/event.yaml", "webservices.ingv.it/fdsnws/event/1")),
       ...row("ShakeMap", extLink("https://shakemap.ingv.it", "shakemap.ingv.it")),
-      ...row("Felt reports", extLink("https://www.hsit.it", "hsit.it")),
-      ...row("Licence", extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0")),
-      ...row("Countries", extLink("https://www.naturalearthdata.com", "Natural Earth 1:110m")),
+      ...row(tr("about.feltReports", "Felt reports"), extLink("https://www.hsit.it", "hsit.it")),
+      ...row(tr("about.licence", "Licence"), extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0")),
+      ...row(tr("about.countries", "Countries"), extLink("https://www.naturalearthdata.com", "Natural Earth 1:110m")),
     ),
     // Citation from DataCite for the DOI of ISIDe, the INGV catalogue the event service serves.
-    el("p", { class: "ingq-muted ingq-small-text" }, "Cite as: ISIDe Working Group (2007). Italian Seismological Instrumental and Parametric Database (ISIDe). INGV. ", extLink("https://doi.org/10.13127/ISIDE", "doi:10.13127/ISIDE")),
-    el("div", { class: "ingq-about-foot ingq-muted" }, "Plugin source and issues: ", extLink(REPO_URL, "GitHub")),
+    el("p", { class: "ingq-muted ingq-small-text" }, tr("about.citeAs", "Cite as:") + " ISIDe Working Group (2007). Italian Seismological Instrumental and Parametric Database (ISIDe). INGV. ", extLink("https://doi.org/10.13127/ISIDE", "doi:10.13127/ISIDE")),
+    el("div", { class: "ingq-about-foot ingq-muted" }, tr("about.repo", "Plugin source and issues:") + " ", extLink(REPO_URL, "GitHub")),
   );
-  const info = el("button", { type: "button", class: "ingq-info", title: "About the data", onclick: () => toggle() }, "i");
+  const info = el("button", { type: "button", class: "ingq-info", title: tr("about.title", "About the data"), onclick: () => toggle() }, "i");
   function toggle() {
     about.hidden = !about.hidden;
     info.classList.toggle("ingq-on", !about.hidden);
   }
   about.hidden = true;
-  return el("div", { class: "ingq-footer" }, info, el("span", {}, "Data: ", extLink("https://terremoti.ingv.it", "INGV"), ", CC BY 4.0"), shareButton(ctl), github, about);
+  return el("div", { class: "ingq-footer" }, info, el("span", {}, tr("footer.data", "Data:") + " ", extLink("https://terremoti.ingv.it", "INGV"), ", CC BY 4.0"), shareButton(ctl), github, about);
 }
 
 /** The right panel: the search, or the detail of the selected event. */
@@ -117,7 +121,7 @@ export function renderPanel(ctl: Controller, container: HTMLElement): () => void
 
 function buildSearch(ctl: Controller) {
   // Time
-  const chips = [...TIME_PRESETS.map((p) => ({ id: p.id as TimePresetId, label: p.label })), { id: "custom" as const, label: "Custom" }].map((p) =>
+  const chips = [...TIME_PRESETS.map((p) => ({ id: p.id as TimePresetId, label: presetLabel(p.id) })), { id: "custom" as const, label: tr("time.custom", "Custom") }].map((p) =>
     el("button", { type: "button", class: "ingq-chip", onclick: () => ctl.set({ time: p.id }, p.id !== "custom") }, p.label),
   );
   const from = el("input", { type: "datetime-local", step: "60", class: "ingq-input ingq-mono", onchange: () => from.value && ctl.set({ from: from.value }) });
@@ -127,14 +131,14 @@ function buildSearch(ctl: Controller) {
   const custom = el(
     "div",
     { class: "ingq-custom" },
-    el("span", {}, "From"),
+    el("span", {}, tr("time.from", "From")),
     from,
-    el("span", {}, "To"),
+    el("span", {}, tr("time.to", "To")),
     to,
     el("span", {}),
-    el("span", { class: "ingq-faint ingq-note" }, `Local time (${zone}). INGV is queried in UTC.`),
+    el("span", { class: "ingq-faint ingq-note" }, tr("time.zone", "Local time ({{zone}}). INGV is queried in UTC.", { zone })),
   );
-  const time = el("div", { class: "ingq-group" }, sectionTitle("Time"), el("div", { class: "ingq-chips" }, ...chips), custom);
+  const time = el("div", { class: "ingq-group" }, sectionTitle(tr("time.title", "Time")), el("div", { class: "ingq-chips" }, ...chips), custom);
 
   // Magnitude
   const numberInput = (onCommit: (v: number) => void) => {
@@ -164,7 +168,7 @@ function buildSearch(ctl: Controller) {
   const magnitude = el(
     "div",
     { class: "ingq-group ingq-tight" },
-    el("div", { class: "ingq-row" }, sectionTitle("Magnitude"), el("div", { class: "ingq-pair" }, magLo, el("span", { class: "ingq-muted" }, "-"), magHi)),
+    el("div", { class: "ingq-row" }, sectionTitle(tr("magnitude.title", "Magnitude")), el("div", { class: "ingq-pair" }, magLo, el("span", { class: "ingq-muted" }, "-"), magHi)),
     magSlider.element,
     ticks,
   );
@@ -178,7 +182,7 @@ function buildSearch(ctl: Controller) {
   const countryBbox = el("span", { class: "ingq-mono" });
   const countryNote = el("span", {});
   // Measured on 2026-10-23: in Greece's box the catalogue has 59 events in 2026, the smallest M 2.6; in Italy's, 13,025.
-  const abroadNote = el("span", {}, "The INGV catalogue is centred on Italy: elsewhere it lists mostly the stronger earthquakes.");
+  const abroadNote = el("span", {}, tr("area.abroad", "The INGV catalogue is centred on Italy: elsewhere it lists mostly the stronger earthquakes."));
   const countryInfo = el("div", { class: "ingq-country" }, countryBbox, countryNote, abroadNote);
   const centreText = el("span", { class: "ingq-mono" });
   const radius = el("input", { type: "number", min: "1", max: "500", class: "ingq-num ingq-num-wide" });
@@ -189,22 +193,22 @@ function buildSearch(ctl: Controller) {
   const around = el(
     "div",
     { class: "ingq-around" },
-    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Centre"), centreText),
-    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Radius"), el("span", { class: "ingq-pair" }, radius, el("span", {}, "km"))),
-    el("div", { class: "ingq-muted" }, "The centre follows the map; click the map to fix it."),
+    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, tr("area.centre", "Centre")), centreText),
+    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, tr("area.radius", "Radius")), el("span", { class: "ingq-pair" }, radius, el("span", {}, "km"))),
+    el("div", { class: "ingq-muted" }, tr("area.follow", "The centre follows the map; click the map to fix it.")),
   );
-  const area = el("div", { class: "ingq-group" }, sectionTitle("Area"), combo.element, countryInfo, around);
+  const area = el("div", { class: "ingq-group" }, sectionTitle(tr("area.title", "Area")), combo.element, countryInfo, around);
 
   // Search, result, legend
   const count = el("span", { class: "ingq-count" });
   const strongest = el("span", { class: "ingq-muted" });
-  const zoomLink = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.zoomToResults()) }, "Zoom to results");
-  const tableLink = el("a", { href: "#", class: "ingq-link ingq-table-link", onclick: (e: Event) => (e.preventDefault(), ctl.openTable()) }, "Show table");
+  const zoomLink = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.zoomToResults()) }, tr("result.zoom", "Zoom to results"));
+  const tableLink = el("a", { href: "#", class: "ingq-link ingq-table-link", onclick: (e: Event) => (e.preventDefault(), ctl.openTable()) }, tr("result.table", "Show table"));
   const message = el("div", { class: "ingq-message" });
   const legend = el(
     "div",
     { class: "ingq-legend" },
-    el("span", {}, "Depth"),
+    el("span", {}, tr("depth.title", "Depth")),
     ...DEPTH_CLASSES.map((c, i) =>
       el(
         "button",
@@ -219,7 +223,7 @@ function buildSearch(ctl: Controller) {
     ),
   );
   const depthButtons = [...legend.querySelectorAll<HTMLButtonElement>(".ingq-depth")];
-  const searchButton = el("button", { type: "button", class: "ingq-primary ingq-search-btn", onclick: () => void ctl.run() }, "Search");
+  const searchButton = el("button", { type: "button", class: "ingq-primary ingq-search-btn", onclick: () => void ctl.run() }, tr("search", "Search"));
   const result = el(
     "div",
     { class: "ingq-group ingq-result" },
@@ -236,7 +240,7 @@ function buildSearch(ctl: Controller) {
     (v) => (depthText.textContent = `${v[0]} - ${v[1]} km`),
     (v) => ctl.set({ depth: v }),
   );
-  const order = el("select", { class: "ingq-input", onchange: () => ctl.set({ order: order.value as OrderBy }) }, ...ORDERS.map((o) => el("option", { value: o.id }, o.label)));
+  const order = el("select", { class: "ingq-input", onchange: () => ctl.set({ order: order.value as OrderBy }) }, ...ORDERS.map((o) => el("option", { value: o.id }, o.label())));
   const limit = el("input", { type: "number", min: "1", class: "ingq-num ingq-num-wide" });
   limit.addEventListener("change", () => {
     const v = parseInt(limit.value, 10);
@@ -245,22 +249,22 @@ function buildSearch(ctl: Controller) {
   const moreBody = el(
     "div",
     { class: "ingq-more-body" },
-    el("div", { class: "ingq-group ingq-tight" }, el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Depth range"), depthText), depthSlider.element),
-    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Order"), order),
-    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, "Limit"), limit),
+    el("div", { class: "ingq-group ingq-tight" }, el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, tr("depth.range", "Depth range")), depthText), depthSlider.element),
+    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, tr("order.title", "Order")), order),
+    el("div", { class: "ingq-row" }, el("span", { class: "ingq-muted" }, tr("limit.title", "Limit")), limit),
   );
   const moreChev = el("span", { class: "ingq-chev" });
   let moreOpen = false;
-  const moreToggle = el("button", { type: "button", class: "ingq-disclosure", onclick: () => ((moreOpen = !moreOpen), refresh()) }, moreChev, "More filters");
+  const moreToggle = el("button", { type: "button", class: "ingq-disclosure", onclick: () => ((moreOpen = !moreOpen), refresh()) }, moreChev, tr("more.title", "More filters"));
   const more = el("div", { class: "ingq-more" }, moreToggle, moreBody);
 
   const live = el("input", { type: "checkbox", class: "ingq-check", onchange: () => ctl.setLiveZoom(live.checked) });
   const liveRow = el(
     "label",
-    { class: "ingq-live", title: "Fit the map to the results every time a filter changes" },
+    { class: "ingq-live", title: tr("live.hint", "Fit the map to the results every time a filter changes") },
     live,
-    el("span", {}, "Live zoom"),
-    el("span", { class: "ingq-faint" }, "fit map to results on every filter change"),
+    el("span", {}, tr("live.title", "Live zoom")),
+    el("span", { class: "ingq-faint" }, tr("live.note", "fit map to results on every filter change")),
   );
 
   // Small screens (GeoLibre docks the panel under the map below 768 px): the
@@ -275,8 +279,8 @@ function buildSearch(ctl: Controller) {
     const scroller = scrollParent(element);
     if (scroller) scroller.scrollTop = 0;
   };
-  const resultsTab = tabButton("results", "Results");
-  const filtersTab = tabButton("filters", "Filters");
+  const resultsTab = tabButton("results", tr("tab.results", "Results"));
+  const filtersTab = tabButton("filters", tr("tab.filters", "Filters"));
   const tabs = el("div", { class: "ingq-tabs" }, resultsTab, filtersTab);
   const list = el("div", { class: "ingq-list" });
   let listed: unknown;
@@ -320,7 +324,7 @@ function buildSearch(ctl: Controller) {
     to.value = s.to;
     depthButtons.forEach((b, i) => {
       b.classList.toggle("ingq-off", !s.depthOn[i]);
-      b.title = s.depthOn[i] ? "Hide" : "Show";
+      b.title = s.depthOn[i] ? tr("depth.hide", "Hide") : tr("depth.show", "Show");
     });
     magSlider.set(s.magnitude);
     magLo.value = String(s.magnitude[0]);
@@ -331,13 +335,14 @@ function buildSearch(ctl: Controller) {
     if (c) {
       countryBbox.textContent = `${c.bbox[0]}, ${c.bbox[1]} → ${c.bbox[2]}, ${c.bbox[3]}`;
       countryNote.textContent = wrapsWorld(c.bbox)
-        ? "Crosses the 180° meridian: the search uses the country's latitude band."
-        : "Bounding box from Natural Earth 1:110m. The map fits to it.";
+        ? tr("area.wraps", "Crosses the 180° meridian: the search uses the country's latitude band.")
+        : tr("area.bbox", "Bounding box from Natural Earth 1:110m. The map fits to it.");
       abroadNote.hidden = c.code === "IT";
     }
     around.hidden = s.area !== "around";
     const centre = s.centre ?? ctl.usedCentre;
-    centreText.textContent = `${centre ? `${centre.lat.toFixed(2)} N, ${centre.lon.toFixed(2)} E` : "map centre"}${s.centre ? " (fixed)" : ""}`;
+    const where = centre ? `${centre.lat.toFixed(2)} N, ${centre.lon.toFixed(2)} E` : tr("area.mapCentre", "map centre");
+    centreText.textContent = s.centre ? tr("area.fixed", "{{where}} (fixed)", { where }) : where;
     radius.value = String(s.radiusKm);
     depthSlider.set(s.depth);
     depthText.textContent = `${s.depth[0]} - ${s.depth[1]} km`;
@@ -350,12 +355,14 @@ function buildSearch(ctl: Controller) {
     searchButton.disabled = st.status === "loading";
     if (st.status === "done") {
       const n = features.length;
-      count.textContent = n ? `${n.toLocaleString("en")} ${n === 1 ? "earthquake" : "earthquakes"}` : "No earthquakes";
+      count.textContent = n
+        ? trCount("result.count", "{{n}} earthquake", "{{n}} earthquakes", n, { n: n.toLocaleString(dateLocale()) })
+        : tr("result.none", "No earthquakes");
       const top = n ? Math.max(...features.map((f) => f.properties.mag)) : null;
       const hiddenNote = ctl.hiddenNote();
       strongest.textContent =
-        (top !== null ? `, strongest M\u00a0${formatMagnitude(top)}` : "") + (hiddenNote ? (n ? `; ${hiddenNote}` : ` (${hiddenNote})`) : "");
-      message.textContent = n >= s.limit ? `The limit of ${s.limit} was reached: narrow the search or raise the limit.` : "";
+        (top !== null ? tr("result.strongest", ", strongest M\u00a0{{mag}}", { mag: formatMagnitude(top) }) : "") + (hiddenNote ? (n ? `; ${hiddenNote}` : ` (${hiddenNote})`) : "");
+      message.textContent = n >= s.limit ? tr("result.limit", "The limit of {{limit}} was reached: narrow the search or raise the limit.", { limit: s.limit }) : "";
     } else {
       count.textContent = "";
       strongest.textContent = "";
@@ -375,7 +382,7 @@ function buildSearch(ctl: Controller) {
       s.depth[0] !== DEPTH_SCALE.min || s.depth[1] !== DEPTH_SCALE.max,
       s.depthOn.some((on) => !on),
     ].filter(Boolean).length;
-    filtersTab.textContent = changed ? `Filters · ${changed}` : "Filters";
+    filtersTab.textContent = changed ? tr("tab.filtersCount", "Filters · {{n}}", { n: changed }) : tr("tab.filters", "Filters");
     drawList();
   }
 

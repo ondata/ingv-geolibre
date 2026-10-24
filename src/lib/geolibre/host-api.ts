@@ -82,7 +82,8 @@ export interface GeoLibreRightPanelRegistration {
   /** Stable, plugin-unique id used to open/collapse/close the panel. */
   id: string;
   /** Title shown in the panel header and the collapsed rail. */
-  title: string;
+  // A getter re-reads the title on a language change (GeoLibre 3.4.0).
+  title: string | (() => string);
   /** Optional rail icon: a URL or `data:` URI rendered as an image. */
   icon?: string;
   /** Preferred expanded width in px (desktop only; the host clamps it). */
@@ -276,7 +277,8 @@ export interface GeoLibreToolbarMenu {
  */
 export interface GeoLibreFloatingPanelRegistration {
   id: string;
-  title: string;
+  // A getter re-reads the title on a language change (GeoLibre 3.4.0).
+  title: string | (() => string);
   icon?: string;
   /** Preferred card width in px (the host clamps it). */
   defaultWidth?: number;

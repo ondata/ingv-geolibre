@@ -1,5 +1,6 @@
 import { sortEvents, type Controller, type SortKey } from "./controller";
 import { dot, el } from "./dom";
+import { dateLocale, tr, trCount } from "./i18n";
 import { eventDate, formatDepth, formatMagnitude, italyDateShort, italyTime, toCsv, toGeoJson } from "./format";
 import { depthColor } from "./layer";
 
@@ -24,13 +25,13 @@ export function renderTable(ctl: Controller, container: HTMLElement): () => void
     { type: "button", class: "ingq-small", onclick: () => ctl.state.events && void save(ctl, `ingv-earthquakes-${stamp()}.geojson`, toGeoJson(ctl.state.events), "application/geo+json") },
     "GeoJSON",
   );
-  const zoom = el("button", { type: "button", class: "ingq-small", title: "Zoom to results", onclick: () => ctl.zoomToResults() }, "Zoom to");
-  const addLayer = el("button", { type: "button", class: "ingq-small", title: "Keep this search in the project, as a layer of the Layers panel", onclick: () => ctl.saveToProject() }, "Add to layers");
+  const zoom = el("button", { type: "button", class: "ingq-small", title: tr("result.zoom", "Zoom to results"), onclick: () => ctl.zoomToResults() }, tr("table.zoom", "Zoom to"));
+  const addLayer = el("button", { type: "button", class: "ingq-small", title: tr("table.addHint", "Keep this search in the project, as a layer of the Layers panel"), onclick: () => ctl.saveToProject() }, tr("table.add", "Add to layers"));
   const headers: { key: SortKey | null; label: string; cls?: string }[] = [
-    { key: "time", label: "Time (Italy)" },
-    { key: "mag", label: "Mag" },
-    { key: null, label: "Place" },
-    { key: "depth", label: "Depth", cls: "ingq-right" },
+    { key: "time", label: tr("table.time", "Time (Italy)") },
+    { key: "mag", label: tr("detail.mag", "Mag") },
+    { key: null, label: tr("table.place", "Place") },
+    { key: "depth", label: tr("detail.depth", "Depth"), cls: "ingq-right" },
   ];
   const headCells = headers.map((h) =>
     el("span", { class: `${h.cls ?? ""}${h.key ? " ingq-sortable" : ""}`.trim(), onclick: h.key ? () => sortBy(h.key!) : undefined }, h.label),
@@ -53,7 +54,12 @@ export function renderTable(ctl: Controller, container: HTMLElement): () => void
   function render() {
     const { events, sort, selected, hover, view } = ctl.state;
     const features = events?.features ?? [];
-    sub.textContent = features.length ? `${features.length.toLocaleString("en")} events · ${ctl.describe()}` : "";
+    sub.textContent = features.length
+      ? trCount("table.count", "{{n}} event · {{search}}", "{{n}} events · {{search}}", features.length, {
+          n: features.length.toLocaleString(dateLocale()),
+          search: ctl.describe(),
+        })
+      : "";
     addLayer.disabled = zoom.disabled = !features.length;
     headCells.forEach((cell, i) => {
       const key = headers[i].key;
@@ -85,7 +91,7 @@ export function renderTable(ctl: Controller, container: HTMLElement): () => void
               row.dataset.id = String(p.eventId);
               return row;
             })
-          : [el("div", { class: "ingq-empty" }, `No earthquakes for these filters.${note ? ` ${note[0].toUpperCase()}${note.slice(1)}.` : ""}`)]),
+          : [el("div", { class: "ingq-empty" }, tr("table.empty", "No earthquakes for these filters.") + (note ? ` ${note[0].toUpperCase()}${note.slice(1)}.` : ""))]),
       );
     }
     const selectedId = view === "detail" ? selected?.properties.eventId : undefined;
