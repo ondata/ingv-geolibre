@@ -232,13 +232,55 @@
   outline-offset: 2px;
 }
 
-.ingq-ticks {
+.ingq-sizes {
+  position: relative;
+  height: 64px;
+  margin: 0 8px;
+}
+
+/* Magnitude: slider and size legend inset by the largest circle's radius, so the circle of 8 centres on its tick and stays in the panel. */
+.ingq-mag .ingq-range,
+.ingq-mag .ingq-sizes {
+  margin: 0 24px;
+}
+
+.ingq-tick {
+  position: absolute;
+  top: 15px;
+  width: 1px;
+  height: 3px;
+  margin-left: -0.5px;
+  background: #374151;
+  pointer-events: none;
+}
+
+.ingq-tick-major {
+  height: 5px;
+}
+
+.ingq-size {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: space-between;
-  margin: 0 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
   font-family: var(--ingq-mono);
   font-size: 10px;
-  color: var(--ingq-faint);
+  color: var(--ingq-muted);
+}
+
+/* The outline gives the size; the fill marks a magnitude inside the range searched. */
+.ingq-size-dot {
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid #9ca3af;
+}
+
+.ingq-size.ingq-on .ingq-size-dot {
+  border-color: #6b7280;
+  background: rgba(107, 114, 128, 0.35);
 }
 
 .ingq-combo {
@@ -1019,6 +1061,24 @@
   .ingq-range-track,
   .ingq-range-fill {
     top: 16px;
+  }
+
+  .ingq-tick {
+    top: 22px;
+  }
+
+  /* No size circles on a phone: the slider keeps only its ticks and numbers. */
+  .ingq-size-dot {
+    display: none;
+  }
+
+  .ingq-sizes {
+    height: 14px;
+  }
+
+  .ingq-mag .ingq-range,
+  .ingq-mag .ingq-sizes {
+    margin: 0 8px;
   }
 
   .ingq-range-handle {

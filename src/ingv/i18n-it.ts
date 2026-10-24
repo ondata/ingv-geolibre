@@ -80,6 +80,7 @@ export const IT: Record<string, string> = {
   "live.hint": "Adatta la mappa ai risultati a ogni cambio di filtro",
   "live.note": "adatta la mappa ai risultati a ogni cambio di filtro",
   "live.title": "Zoom automatico",
+  "magnitude.sizes": "Dimensione dei punti sulla mappa a ogni magnitudo; pieni: dentro l'intervallo cercato",
   "magnitude.title": "Magnitudo",
   "more.title": "Altri filtri",
   "order.magnitude": "Magnitudo, prima le maggiori",

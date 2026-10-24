@@ -137,7 +137,7 @@ describe("layer", () => {
       10, "#f59e0b", 30, "#60a5fa", 100, "#1d4ed8",
     ]);
     expect(paint["circle-color"].length).toBe(3 + 2 * (DEPTH_CLASSES.length - 1));
-    expect(paint["circle-radius"]).toEqual(["interpolate", ["linear"], ["to-number", ["get", "mag"], 2], 2, 3, 6, 18]);
+    expect(paint["circle-radius"]).toEqual(["interpolate", ["linear"], ["to-number", ["get", "mag"], 0], 0, 2, 8, 24]);
   });
 
   it("keeps a search in the project as a styled layer", () => {

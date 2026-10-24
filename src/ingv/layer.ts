@@ -21,7 +21,16 @@ export function depthColor(depth: number): string {
 }
 
 /** Circle radius in pixels at these magnitudes, linear in between and clamped outside. */
-export const RADIUS_BY_MAGNITUDE = { minMag: 2, minRadius: 3, maxMag: 6, maxRadius: 18 };
+// Linear in magnitude, itself a logarithmic scale, from M 0 to M 8: every
+// magnitude has its own size, and a strong earthquake stands out from a M 6.
+export const RADIUS_BY_MAGNITUDE = { minMag: 0, minRadius: 2, maxMag: 8, maxRadius: 24 };
+
+/** The radius `circleRadius` gives a magnitude, for the size legend under the magnitude slider. */
+export function radiusAt(mag: number): number {
+  const { minMag, minRadius, maxMag, maxRadius } = RADIUS_BY_MAGNITUDE;
+  const clamped = Math.min(maxMag, Math.max(minMag, mag));
+  return minRadius + ((clamped - minMag) / (maxMag - minMag)) * (maxRadius - minRadius);
+}
 
 /** `step` on depth: GeoLibre's "Import style" reads it back as a graduated colour, with its legend. */
 export function circleColor(): unknown[] {

@@ -4,7 +4,7 @@ import { wrapsWorld } from "./countries";
 import { renderDetail } from "./detail";
 import { dot, el, extLink, scrollParent } from "./dom";
 import { eventDate, formatDepth, formatMagnitude, italyDateShort, italyTime } from "./format";
-import { DEPTH_CLASSES, depthColor } from "./layer";
+import { DEPTH_CLASSES, depthColor, radiusAt } from "./layer";
 import { DEFAULT_MAGNITUDE, DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type OrderBy, type TimePresetId } from "./query";
 import { rangeSlider } from "./range-slider";
 import { dateLocale, presetLabel, tr, trCount } from "./i18n";
@@ -160,14 +160,32 @@ function buildSearch(ctl: Controller) {
     },
     (v) => ctl.set({ magnitude: v }),
   );
+  // A tick at every magnitude, longer on the even ones the size legend labels.
+  const firstHandle = magSlider.element.querySelector(".ingq-range-handle");
+  for (let m = MAGNITUDE_SCALE.min; m <= MAGNITUDE_SCALE.max; m++) {
+    const tick = el("span", { class: `ingq-tick${m % 2 ? "" : " ingq-tick-major"}`, style: { left: `${(m / MAGNITUDE_SCALE.max) * 100}%` } });
+    magSlider.element.insertBefore(tick, firstHandle);
+  }
   function commitMagnitude(v: [number, number]) {
     magSlider.set(v);
     ctl.set({ magnitude: magSlider.get() });
   }
-  const ticks = el("div", { class: "ingq-ticks" }, ...[0, 2, 4, 6, 8].map((t) => el("span", {}, String(t))));
+  // Size legend: each mark's circle is as large as a point of that magnitude on
+  // the map, filled when the magnitude is inside the range searched.
+  const sizeMarks = [0, 2, 4, 6, 8].map((m) => {
+    const d = `${2 * radiusAt(m)}px`;
+    const mark = el(
+      "span",
+      { class: "ingq-size", style: { left: `${(m / MAGNITUDE_SCALE.max) * 100}%` } },
+      el("span", { class: "ingq-size-dot", style: { width: d, height: d } }),
+      el("span", {}, String(m)),
+    );
+    return { m, mark };
+  });
+  const ticks = el("div", { class: "ingq-sizes", title: tr("magnitude.sizes", "Point size on the map at each magnitude; filled: inside the range searched") }, ...sizeMarks.map((s) => s.mark));
   const magnitude = el(
     "div",
-    { class: "ingq-group ingq-tight" },
+    { class: "ingq-group ingq-tight ingq-mag" },
     el("div", { class: "ingq-row" }, sectionTitle(tr("magnitude.title", "Magnitude")), el("div", { class: "ingq-pair" }, magLo, el("span", { class: "ingq-muted" }, "-"), magHi)),
     magSlider.element,
     ticks,
@@ -329,6 +347,7 @@ function buildSearch(ctl: Controller) {
     magSlider.set(s.magnitude);
     magLo.value = String(s.magnitude[0]);
     magHi.value = String(s.magnitude[1]);
+    for (const { m, mark } of sizeMarks) mark.classList.toggle("ingq-on", m >= s.magnitude[0] && m <= s.magnitude[1]);
     combo.show(s.area, s.country);
     const c = s.area === "country" ? s.country : null;
     countryInfo.hidden = !c;
