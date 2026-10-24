@@ -4,5 +4,8 @@
   "version": "0.2.4",
   "entry": "dist/index.js",
   "description": "Search the INGV earthquake catalogue (Italy) and show the events on the map.",
-  "style": "dist/style.css"
+  "style": "dist/style.css",
+  "assistant": {
+    "description": "Search the INGV earthquake catalogue (Italy, and the stronger events worldwide) by period, magnitude, depth and area, open an event with its ShakeMap and felt reports, and keep a search as a layer."
+  }
 }

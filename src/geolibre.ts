@@ -5,6 +5,7 @@ import type { IngvHost } from "./ingv/host";
 import { renderPanel } from "./ingv/panel";
 import { renderTable } from "./ingv/table";
 import { syncAddress } from "./ingv/address";
+import { registerAssistantTools } from "./ingv/assistant";
 import { linkFrom, URL_PARAMETER_NAMES } from "./ingv/url-params";
 import "./ingv/panel.css";
 
@@ -67,6 +68,8 @@ export const plugin: Plugin = {
     const map = host.getMap?.();
     if (map?.getProjection?.()?.type === "globe") map.setProjection?.({ type: "mercator" });
     ctl.showMinimap();
+    // Registered at once: GeoLibre's activate_plugin waits for the tools of a plugin it turns on.
+    const unregisterAssistant = registerAssistantTools(host, ctl);
     app.openRightPanel?.(PANEL_ID);
     // A first search with the defaults, so the panel opens on the earthquakes.
     void ctl.run();
@@ -76,6 +79,7 @@ export const plugin: Plugin = {
     // Opened from a link: its parameters stay in the address until the plugin has read them.
     if (!URL_PARAMETER_NAMES.some((name) => new URLSearchParams(location.search).has(name))) startAddress();
     disposePanel = () => {
+      unregisterAssistant();
       stopAddress?.();
       startAddress = null;
       activeCtl = null;

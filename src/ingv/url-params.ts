@@ -92,12 +92,13 @@ function utcMinute(raw: string): string | null {
 }
 
 /**
- * Read the search a link asks for, or null when it asks for nothing. The
+ * Read the search a link asks for, or null when it asks for nothing. With
+ * `errors` the values that are not valid are listed there instead of warned. The
  * search starts from the defaults, so the same link gives the same search to
  * everyone. Anyone can write a link: a value that is not valid is left out
  * with a warning, the rest is still searched.
  */
-export function linkFrom(params: URLSearchParams, now: Date): Link | null {
+export function linkFrom(params: URLSearchParams, now: Date, errors?: string[]): Link | null {
   const s = defaultSearch(now);
   const link: Link = { search: s, box: null, eventId: null, liveZoom: null, minimap: null };
   let asked = false;
@@ -107,7 +108,10 @@ export function linkFrom(params: URLSearchParams, now: Date): Link | null {
     if (!raw) return;
     asked = true;
     const value = parse(raw);
-    if (value === null) console.warn(`[ingv-geolibre] Ignoring ${name}=${raw} in the link.`);
+    if (value === null) {
+      if (errors) errors.push(`${name}=${raw}`);
+      else console.warn(`[ingv-geolibre] Ignoring ${name}=${raw} in the link.`);
+    }
     else apply(value);
   };
   const oneOf = <T extends string>(values: readonly T[]) => (raw: string) => (values.includes(raw as T) ? (raw as T) : null);

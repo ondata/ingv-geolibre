@@ -65,6 +65,18 @@ export interface IngvHostExtras {
   openControlPanel?: (id: "minimap", options?: { zoomOffset?: number; width?: number; height?: number }) => void;
   closeControlPanel?: (id: "minimap") => void;
   isControlPanelVisible?: (id: "minimap") => boolean;
+  /** A tool of GeoLibre's AI Assistant while the plugin is on (GeoLibre 3.0); returns the disposer. */
+  registerAssistantToolSpec?: (spec: AssistantToolSpec) => () => void;
+  /** Text added to the assistant's system prompt while the plugin is on (GeoLibre 3.1); returns the disposer. */
+  registerAssistantGuidance?: (text: string) => () => void;
+}
+
+export interface AssistantToolSpec {
+  name: string;
+  description: string;
+  inputSchema?: Record<string, unknown>;
+  /** `signal` aborts on the assistant's Stop (GeoLibre after 3.4.0; absent before). */
+  callback: (input: unknown, context?: { signal?: AbortSignal }) => unknown | Promise<unknown>;
 }
 
 export type IngvHost = GeoLibreAppAPI & IngvHostExtras;

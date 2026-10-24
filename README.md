@@ -17,6 +17,8 @@ Status: **beta**, open for testing.
 - **Share**: the Share button at the bottom of the panel gives a GeoLibre web link that opens the same search for anyone: period, magnitude, depth, area (the exact box of the map view, the point and radius, or the country), order and limit, plus the event when one is open. A preset period stays relative: a "24 h" link shows the last 24 hours when it is opened. In GeoLibre web the address bar follows the search too, so it can be copied as it is.
 - **Small screens**: below 768 px, where GeoLibre docks the panel under the map, the results become a list with Results and Filters tabs.
 
+- **AI Assistant**: GeoLibre's AI Assistant can drive the panel. Ask, in your own words, "i terremoti più forti in Italia nell'ultima settimana", "c'è stato un terremoto vicino a Napoli oggi?", "apri il più forte: c'è la ShakeMap?", "salvalo come layer": the assistant searches, opens the event or keeps the search as a layer through the panel, and you see it happen. Three tools (`search_earthquakes`, `open_event`, `add_to_layers`) and a short guidance text; on GeoLibre web the assistant also turns the plugin on by itself, with GeoLibre 3.4.0 Desktop turn it on first from the Plugins menu.
+
 ![The results table under the map, sorted by magnitude, and the event under the pointer ringed on the map](docs/images/2-table.webp)
 
 ![An event's detail: summary, felt reports, how location and magnitude changed after the first estimate, seismicity around](docs/images/3-detail.webp)
