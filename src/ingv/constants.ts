@@ -10,7 +10,7 @@ export const PLUGIN_ID = DEV_COPY ? "ingv-geolibre-dev" : "ingv-geolibre";
 export const PLUGIN_NAME = DEV_COPY ? "INGV Earthquakes (dev)" : "INGV Earthquakes";
 /** Title of the panel. */
 export const PLUGIN_LABEL = DEV_COPY ? "INGV Earthquakes (dev)" : "INGV Earthquakes";
-export const PLUGIN_VERSION = "0.2.0";
+export const PLUGIN_VERSION = "0.2.1";
 
 /** Right-panel id, unique across plugins. */
 export const PANEL_ID = `${PLUGIN_ID}-search`;
