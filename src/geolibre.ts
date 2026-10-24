@@ -4,6 +4,7 @@ import { Controller } from "./ingv/controller";
 import type { IngvHost } from "./ingv/host";
 import { renderPanel } from "./ingv/panel";
 import { renderTable } from "./ingv/table";
+import { syncAddress } from "./ingv/address";
 import { linkFrom, URL_PARAMETER_NAMES } from "./ingv/url-params";
 import "./ingv/panel.css";
 
@@ -23,6 +24,8 @@ type Plugin = GeoLibrePlugin & {
 
 let disposePanel: (() => void) | null = null;
 let activeCtl: Controller | null = null;
+/** Starts keeping the address on the search, once; set while the plugin is on. */
+let startAddress: (() => void) | null = null;
 /** The link already followed: GeoLibre gives its parameters again at every project it opens. */
 let followedLink: string | null = null;
 
@@ -68,7 +71,13 @@ export const plugin: Plugin = {
     // A first search with the defaults, so the panel opens on the earthquakes.
     void ctl.run();
     activeCtl = ctl;
+    let stopAddress: (() => void) | null = null;
+    startAddress = () => (stopAddress ??= syncAddress(ctl));
+    // Opened from a link: its parameters stay in the address until the plugin has read them.
+    if (!URL_PARAMETER_NAMES.some((name) => new URLSearchParams(location.search).has(name))) startAddress();
     disposePanel = () => {
+      stopAddress?.();
+      startAddress = null;
       activeCtl = null;
       unregisterTable?.();
       app.closeRightPanel?.(PANEL_ID);
@@ -78,11 +87,12 @@ export const plugin: Plugin = {
   },
   handleUrlParameters(_app, params) {
     const link = linkFrom(params, new Date());
-    if (!link || !activeCtl) return;
+    if (!activeCtl) return;
+    if (!link) return startAddress?.();
     const key = URL_PARAMETER_NAMES.map((name) => params.get(name)).join("|");
-    if (key === followedLink) return;
+    if (key === followedLink) return startAddress?.();
     followedLink = key;
-    void activeCtl.followLink(link);
+    void activeCtl.followLink(link).then(() => startAddress?.());
   },
   deactivate() {
     disposePanel?.();

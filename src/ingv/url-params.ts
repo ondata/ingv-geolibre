@@ -41,7 +41,7 @@ export type Minimap = number | "off";
 /** Where a shared link opens: GeoLibre web, the one address every recipient can open. */
 const SHARE_BASE_URL = "https://web.geolibre.app/";
 /** The registry id `?plugin=` installs; the development copy is not in the registry, so it shares this too. */
-const SHARE_PLUGIN_ID = "ingv-geolibre";
+export const SHARE_PLUGIN_ID = "ingv-geolibre";
 
 const AREAS: Area[] = ["view", "around", "world", "country"];
 const ORDERS: OrderBy[] = ["time", "time-asc", "magnitude", "magnitude-asc"];
@@ -58,7 +58,7 @@ export interface Link {
 /** What a shared link gives: the search, the box or centre it used, the event open, the map view. */
 export interface Shared {
   search: SearchState;
-  /** The box the last "Map view" search used. */
+  /** The box a "Map view" search would use now. */
   box: Bbox | null;
   /** The centre the last "Around" search used. */
   centre: SearchState["centre"];

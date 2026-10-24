@@ -14,6 +14,7 @@ import { formatDelay, parseHistory } from "../src/ingv/products";
 import { toCsv } from "../src/ingv/format";
 import { rangeSlider, snap } from "../src/ingv/range-slider";
 import { linkFrom, shareUrl, type Shared } from "../src/ingv/url-params";
+import { addressWith } from "../src/ingv/address";
 
 /** Three events of 2026-10-20..22, M >= 2, captured live on 2026-10-23. */
 const fixture = JSON.parse(readFileSync(join(__dirname, "fixtures/events-3.json"), "utf8"));
@@ -315,6 +316,29 @@ describe("live zoom", () => {
     expect(sameBox(view, [6, 36, 19, 47.5])).toBe(false);
   });
 
+  it("keeps the searched box after opening an event, until the user moves the map", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
+    let view: [number, number, number, number] = [6, 36, 19, 47.5];
+    let moveend: (() => void) | null = null;
+    const map = { once: (_: string, cb: () => void) => (moveend = cb), flyTo: vi.fn(), getZoom: () => 6, getCenter: () => ({ lng: 12, lat: 42 }) };
+    const app = { addGeoJsonLayer: vi.fn(), getViewBounds: () => view, getMap: () => map } as unknown as IngvHost;
+    const ctl = new Controller(app);
+    (ctl as unknown as { resultsLayer: () => null }).resultsLayer = () => null;
+    ctl.update({ liveZoom: false });
+    await ctl.run();
+    ctl.select(ctl.state.events!.features[0]);
+    view = [13, 37, 14, 38];
+    moveend!();
+    ctl.backToSearch();
+    await ctl.run();
+    const minLon = (i: number) => new URL(String(vi.mocked(fetch).mock.calls[i][0])).searchParams.get("minlongitude");
+    // The flight to the event does not shrink the search; a move of the user does.
+    expect(minLon(1)).toBe("6");
+    view = [12, 36, 15, 39];
+    await ctl.run();
+    expect(minLon(2)).toBe("12");
+  });
+
   it("lets the centre of Around follow the map until a click fixes it", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(fixture), { status: 200 })));
     let centre = { lng: 15, lat: 38 };
@@ -458,6 +482,14 @@ describe("share links", () => {
     expect(warn).toHaveBeenCalledTimes(5);
     expect(linkFrom(new URLSearchParams("lat=40&lon=12"), now)).toBeNull();
     warn.mockRestore();
+  });
+
+  it("keeps the address on the search, leaving the other parameters alone", () => {
+    const href = "https://web.geolibre.app/?url=http://x/p.json&plugin=ingv-geolibre&ingvTime=24h&ingvEvent=1&lat=40&lon=12&zoom=5&other=1";
+    const ours = new URL(shareUrl(shared({ time: "30d", magnitude: [3, 8], area: "world" }))).searchParams;
+    expect(addressWith(href, ours)).toBe("https://web.geolibre.app/?url=http%3A%2F%2Fx%2Fp.json&other=1&plugin=ingv-geolibre&ingvTime=30d&ingvMag=3,8&ingvArea=world");
+    // Turned off: the plugin's parameters go, GeoLibre's view stays.
+    expect(addressWith(href, null)).toBe("https://web.geolibre.app/?url=http%3A%2F%2Fx%2Fp.json&lat=40&lon=12&zoom=5&other=1");
   });
 
   it("searches the shared box, not the wider screen around it", async () => {

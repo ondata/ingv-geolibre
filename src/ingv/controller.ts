@@ -203,8 +203,6 @@ export class Controller {
   minimap: Minimap = DEFAULT_MINIMAP;
   /** The plugin opened the Minimap, so it closes it when turned off. */
   private openedMinimap = false;
-  /** The box the last "Map view" search used; a shared link carries it. */
-  usedBox: Bbox | null = null;
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
   openTable: () => void = () => {};
   closeTable: () => void = () => {};
@@ -243,7 +241,6 @@ export class Controller {
     this.update({ status: "loading", message: "Searching…" });
     try {
       const view = this.searchedView();
-      this.usedBox = this.search.area === "view" ? view : null;
       const now = new Date();
       const shown = { ...this.search, centre: this.aroundCentre() };
       // The hidden classes are asked too, so an empty result can say what the legend hides.
@@ -294,6 +291,7 @@ export class Controller {
   select(feature: EventFeature) {
     const [lon, lat] = feature.geometry.coordinates;
     const map = this.app.getMap?.();
+    this.keepBoxAfterMove(this.nextBox());
     map?.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 8), offset: [0, -this.mapPadding().bottom / 2] });
     this.results?.setRing(feature.properties.eventId);
     this.update({ view: "detail", selected: feature });
@@ -330,9 +328,15 @@ export class Controller {
    * change, so until the user moves the map the previous box is kept.
    */
   private searchedView(): Bbox | null {
+    const box = this.nextBox();
+    if (!this.liveFit || box !== this.liveFit.searched) this.liveFit = null;
+    return box;
+  }
+
+  /** The box the next "Map view" search would use: the previous one while the map stays where live zoom left it. */
+  private nextBox(): Bbox | null {
     const view = this.app.getViewBounds?.() ?? null;
     if (this.liveFit && (!this.liveFit.view || (view && sameBox(view, this.liveFit.view)))) return this.liveFit.searched;
-    this.liveFit = null;
     return view;
   }
 
@@ -351,13 +355,21 @@ export class Controller {
 
   /** Live zoom: fit to the results, then note the view it left. */
   private fitLive(searched: Bbox | null) {
-    const map = this.app.getMap?.();
-    if (!map || !this.state.events?.features.length) return;
-    map.once("moveend", () => {
+    if (!this.app.getMap?.() || !this.state.events?.features.length) return;
+    this.keepBoxAfterMove(searched);
+    this.fitResults();
+  }
+
+  /**
+   * A move the plugin makes (live zoom, opening an event, Zoom to results)
+   * keeps the box searched: only a move of the user changes the area of "Map
+   * view". Else opening an event at zoom 8 would shrink the next search to it.
+   */
+  private keepBoxAfterMove(searched: Bbox | null) {
+    this.app.getMap?.()?.once("moveend", () => {
       const view = this.app.getViewBounds?.();
       if (view) this.liveFit = { view, searched };
     });
-    this.zoomToResults();
   }
 
   /**
@@ -420,7 +432,8 @@ export class Controller {
     const centre = map?.getCenter();
     return {
       search: this.search,
-      box: this.usedBox,
+      // What a search would cover now: after the map is moved, the view on screen.
+      box: this.search.area === "view" ? this.nextBox() : null,
       centre: this.usedCentre,
       eventId: this.state.view === "detail" ? (this.state.selected?.properties.eventId ?? null) : null,
       liveZoom: this.state.liveZoom,
@@ -436,8 +449,15 @@ export class Controller {
     if (on) this.fitLive(this.app.getViewBounds?.() ?? null);
   }
 
-  /** Fit the map to the events of the search; one event alone is shown at zoom 8. */
+  /** "Zoom to results": fit the map to the events, keeping the box searched. */
   zoomToResults() {
+    if (!eventsBbox(this.state.events?.features ?? [])) return;
+    this.keepBoxAfterMove(this.nextBox());
+    this.fitResults();
+  }
+
+  /** Fit the map to the events of the search; one event alone is shown at zoom 8. */
+  private fitResults() {
     const box = eventsBbox(this.state.events?.features ?? []);
     if (!box) return;
     const map = this.app.getMap?.();
