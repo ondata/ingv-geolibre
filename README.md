@@ -47,6 +47,7 @@ A link can also be written by hand. Every parameter is optional; the ones left o
 | `ingvLimit` | number of events | `ingvLimit=200` |
 | `ingvEvent` | event id, opens its detail | `ingvEvent=47616612` |
 | `ingvLive` | `0`: live zoom off | `ingvLive=0` |
+| `ingvMinimap` | Minimap zoom relative to the map (default -6; lower is wider), or `off`; screens 768 px and wider | `ingvMinimap=-8` |
 
 For example, the earthquakes of magnitude 4.5 and above of the last 30 days in Greece: `https://web.geolibre.app/?plugin=ingv-geolibre&ingvTime=30d&ingvMag=4.5,8&ingvArea=country&ingvCountry=GR`
 

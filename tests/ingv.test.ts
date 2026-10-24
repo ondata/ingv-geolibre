@@ -421,6 +421,7 @@ describe("share links", () => {
     centre: null,
     eventId: null,
     liveZoom: true,
+    minimap: -6,
     view: null,
     ...extra,
   });
@@ -436,7 +437,8 @@ describe("share links", () => {
       [{ time: "24h", magnitude: [3, 8], depth: [0, 300], depthOn: [true, false, true, false], order: "magnitude", limit: 50, area: "world" }, {}],
       [{ area: "country", country: italy }, {}],
       [{ area: "around", radiusKm: 50 }, { centre: { lat: 38.1234, lon: 15.5 } }],
-      [{ time: "custom", from: "2026-10-01T08:30", to: "2026-10-02T20:15" }, { eventId: 47616612, liveZoom: false }],
+      [{ time: "custom", from: "2026-10-01T08:30", to: "2026-10-02T20:15" }, { eventId: 47616612, liveZoom: false, minimap: -8.5 }],
+      [{}, { minimap: "off" }],
     ];
     for (const [search, extra] of cases) {
       const s = shared(search, extra);
@@ -444,14 +446,16 @@ describe("share links", () => {
       expect(link.search).toEqual({ ...s.search, centre: s.search.centre ?? s.centre });
       expect(link.eventId).toBe(s.eventId);
       expect(link.liveZoom).toBe(s.liveZoom ? null : false);
+      expect(link.minimap).toBe(s.minimap === -6 ? null : s.minimap);
     }
   });
 
   it("ignores values that are not valid and keeps the rest", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const link = linkFrom(new URLSearchParams("ingvTime=2w&ingvMag=5,3&ingvArea=world&ingvLimit=-1&ingvCountry=XX"), now)!;
+    const link = linkFrom(new URLSearchParams("ingvTime=2w&ingvMag=5,3&ingvArea=world&ingvLimit=-1&ingvCountry=XX&ingvMinimap=wide"), now)!;
     expect(link.search).toEqual({ ...defaultSearch(now), area: "world" });
-    expect(warn).toHaveBeenCalledTimes(4);
+    expect(link.minimap).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(5);
     expect(linkFrom(new URLSearchParams("lat=40&lon=12"), now)).toBeNull();
     warn.mockRestore();
   });

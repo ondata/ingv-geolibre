@@ -29,8 +29,14 @@ const BOX = "ingvBox";
 const EVENT = "ingvEvent";
 /** `0`: live zoom off, so the map stays on GeoLibre's own `lat`, `lon`, `zoom`. */
 const LIVE = "ingvLive";
+/** The Minimap's zoom relative to the map (`-8` wider, `-3` closer), or `off`. */
+const MINIMAP = "ingvMinimap";
 
-export const URL_PARAMETER_NAMES = [TIME, FROM, TO, MAG, DEPTH, DEPTH_OFF, AREA, COUNTRY, CENTRE, RADIUS, ORDER, LIMIT, BOX, EVENT, LIVE];
+export const URL_PARAMETER_NAMES = [TIME, FROM, TO, MAG, DEPTH, DEPTH_OFF, AREA, COUNTRY, CENTRE, RADIUS, ORDER, LIMIT, BOX, EVENT, LIVE, MINIMAP];
+
+/** The Minimap's zoom relative to the map when the plugin opens it; GeoLibre's own is -4. */
+export const DEFAULT_MINIMAP = -6;
+export type Minimap = number | "off";
 
 /** Where a shared link opens: GeoLibre web, the one address every recipient can open. */
 const SHARE_BASE_URL = "https://web.geolibre.app/";
@@ -46,6 +52,7 @@ export interface Link {
   box: Bbox | null;
   eventId: number | null;
   liveZoom: boolean | null;
+  minimap: Minimap | null;
 }
 
 /** What a shared link gives: the search, the box or centre it used, the event open, the map view. */
@@ -57,6 +64,7 @@ export interface Shared {
   centre: SearchState["centre"];
   eventId: number | null;
   liveZoom: boolean;
+  minimap: Minimap;
   view: { lon: number; lat: number; zoom: number } | null;
 }
 
@@ -91,7 +99,7 @@ function utcMinute(raw: string): string | null {
  */
 export function linkFrom(params: URLSearchParams, now: Date): Link | null {
   const s = defaultSearch(now);
-  const link: Link = { search: s, box: null, eventId: null, liveZoom: null };
+  const link: Link = { search: s, box: null, eventId: null, liveZoom: null, minimap: null };
   let asked = false;
   /** Apply a parameter's value when it parses; a value that does not is left out with a warning. */
   const take = <T>(name: string, parse: (raw: string) => T | null, apply: (value: T) => void) => {
@@ -136,6 +144,11 @@ export function linkFrom(params: URLSearchParams, now: Date): Link | null {
   take(BOX, box, (v) => (link.box = v));
   take(EVENT, positive(true), (v) => (link.eventId = v));
   take(LIVE, oneOf(["0", "1"]), (v) => (link.liveZoom = v === "1"));
+  take(
+    MINIMAP,
+    (raw) => (raw === "off" ? raw : raw !== "" && Number(raw) >= -12 && Number(raw) <= 4 ? Number(raw) : null),
+    (v) => (link.minimap = v),
+  );
   // A country or a centre counts only with its area.
   if (s.area !== "country") s.country = null;
   if (s.area === "country" && !s.country) s.area = "view";
@@ -170,6 +183,7 @@ export function shareParams(shared: Shared): URLSearchParams {
   if (s.area === "view" && shared.box) params.set(BOX, shared.box.map((v) => round(v, 4)).join(","));
   if (shared.eventId) params.set(EVENT, String(shared.eventId));
   if (!shared.liveZoom) params.set(LIVE, "0");
+  if (shared.minimap !== DEFAULT_MINIMAP) params.set(MINIMAP, String(shared.minimap));
   return params;
 }
 

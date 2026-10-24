@@ -4,7 +4,7 @@ import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
-import type { Link, Shared } from "./url-params";
+import { DEFAULT_MINIMAP, type Link, type Minimap, type Shared } from "./url-params";
 import {
   buildQueryUrl,
   eventQueryUrl,
@@ -199,6 +199,10 @@ export class Controller {
   panelElement: HTMLElement | null = null;
   /** The centre the last "Around" search used; the panel shows it. */
   usedCentre: SearchState["centre"] = null;
+  /** The Minimap the plugin asks for; a link can change it. */
+  minimap: Minimap = DEFAULT_MINIMAP;
+  /** The plugin opened the Minimap, so it closes it when turned off. */
+  private openedMinimap = false;
   /** The box the last "Map view" search used; a shared link carries it. */
   usedBox: Bbox | null = null;
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
@@ -364,6 +368,10 @@ export class Controller {
   async followLink(link: Link) {
     this.search = link.search;
     this.state = { ...this.state, view: "search", selected: null, liveZoom: link.liveZoom ?? this.state.liveZoom };
+    if (link.minimap !== null) {
+      this.minimap = link.minimap;
+      this.showMinimap();
+    }
     this.liveFit = link.box ? { view: null, searched: link.box } : null;
     await this.run();
     // Live zoom has moved the map to the results; else the map goes to the box.
@@ -390,6 +398,22 @@ export class Controller {
     else this.update({ message: `Event ${eventId} not found in the INGV catalogue.` });
   }
 
+  /**
+   * Open GeoLibre's Minimap with a wider overview than its own: a sequence is
+   * often seen at zoom 10-11, and the overview shows the region around it. Not
+   * on a phone, where the panel already covers the bottom of the map.
+   */
+  showMinimap() {
+    if (window.innerWidth < 768) return;
+    if (this.minimap === "off") {
+      if (this.openedMinimap) this.app.closeControlPanel?.("minimap");
+      this.openedMinimap = false;
+      return;
+    }
+    if (this.app.isControlPanelVisible?.("minimap") === false) this.openedMinimap = true;
+    this.app.openControlPanel?.("minimap", { zoomOffset: this.minimap });
+  }
+
   /** What a shared link gives of the panel and the map now. */
   shared(): Shared {
     const map = this.app.getMap?.();
@@ -400,6 +424,8 @@ export class Controller {
       centre: this.usedCentre,
       eventId: this.state.view === "detail" ? (this.state.selected?.properties.eventId ?? null) : null,
       liveZoom: this.state.liveZoom,
+      // A Minimap closed by the user on a wide screen travels as "off".
+      minimap: window.innerWidth >= 768 && this.app.isControlPanelVisible?.("minimap") === false ? "off" : this.minimap,
       view: map && centre ? { lon: centre.lng, lat: centre.lat, zoom: map.getZoom() } : null,
     };
   }
@@ -455,6 +481,7 @@ export class Controller {
   }
 
   dispose() {
+    if (this.openedMinimap) this.app.closeControlPanel?.("minimap");
     this.running?.abort();
     this.results?.dispose();
     this.results = null;
