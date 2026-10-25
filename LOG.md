@@ -1,5 +1,10 @@
 # Log
 
+## 2026-10-25
+
+- **0.3.2 released**: in the area list, under the country search, a fixed note on coverage (`area.abroad`, the text already shown under the list for countries other than Italy) and an "i" button that opens the footer's "About the data" (`footer()` now returns `showAbout`, passed to `areaCombo`; mousedown, so the search field's blur does not close the list first). Checked headed on web.geolibre.app with the local build: note and "i" in the list, the click closes the list and opens "About the data" with the footer "i" lit. Zip sha256 `b6b1afb1…`, checked on the download. Dev copy 0.3.2 on Desktop. Registry: #125 (0.3.1) still open, so updated to 0.3.2 on the same branch `ondata:update-ingv-geolibre-0.3.1` (title and body too); `npm run validate` passes. 52 tests.
+- **Filters re-query the service** (question): every change of period, magnitude or area calls `set()` -> `run()` with a new `starttime`, no local cache. Checked 1 year, M 5-8, Italy box against the service: 5 events, max Mw 6.1, same as the panel.
+
 ## 2026-10-24
 
 - **0.3.1 released** with the magnitude size legend (zip sha256 `8290138a…`, checked on the download); notes thank @pigreco, who suggested the sizes. Dev copy 0.3.1 on Desktop. Registry: #124 (0.3.0) was already merged; new PR opengeos/geolibre-plugins#125 from `ondata:update-ingv-geolibre-0.3.1`, validate and pre-commit pass locally.
