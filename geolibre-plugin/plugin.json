@@ -1,7 +1,7 @@
 {
   "id": "ingv-geolibre",
   "name": "INGV Earthquakes",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "entry": "dist/index.js",
   "description": "Search the INGV earthquake catalogue (Italy) and show the events on the map.",
   "style": "dist/style.css",
