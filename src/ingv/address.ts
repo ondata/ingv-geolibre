@@ -21,11 +21,21 @@ export function addressWith(href: string, ours: URLSearchParams | null): string 
   return url.toString().replace(/%2C/g, ",");
 }
 
+/** The address with `plugin=ingv-geolibre`, which `setUrlParameters` cannot write: a copied address turns the plugin on. */
+export function addressWithPlugin(href: string): string {
+  const url = new URL(href);
+  if (url.searchParams.get("plugin") === SHARE_PLUGIN_ID) return href;
+  url.searchParams.set("plugin", SHARE_PLUGIN_ID);
+  return url.toString().replace(/%2C/g, ",");
+}
+
 /**
  * Keep the browser's address on the search shown, as Share would write it, so
- * the address can be copied as it is. GeoLibre has no API for it (yet), so the
- * plugin replaces the history entry itself: no new entry, Back is unchanged.
- * Returns the function that stops it and takes the parameters out again.
+ * the address can be copied as it is. GeoLibre 3.5.0 writes the plugin's own
+ * parameters through `setUrlParameters` and keeps `lat`, `lon`, `zoom` on the
+ * map itself; on older hosts the plugin replaces the history entry itself: no
+ * new entry, Back is unchanged. Returns the function that stops it and takes
+ * the parameters out again.
  */
 export function syncAddress(ctl: Controller): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -33,7 +43,14 @@ export function syncAddress(ctl: Controller): () => void {
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (ctl.state.status !== "done") return;
-      const next = addressWith(location.href, new URL(shareUrl(ctl.shared())).searchParams);
+      const ours = new URL(shareUrl(ctl.shared())).searchParams;
+      if (ctl.app.setUrlParameters) {
+        ctl.app.setUrlParameters(new URLSearchParams([...ours].filter(([name]) => URL_PARAMETER_NAMES.includes(name))));
+        const next = addressWithPlugin(location.href);
+        if (next !== location.href) history.replaceState(history.state, "", next);
+        return;
+      }
+      const next = addressWith(location.href, ours);
       if (next !== location.href) history.replaceState(history.state, "", next);
     }, 500);
   };

@@ -47,6 +47,8 @@ export interface IngvHostExtras {
   getViewBounds?: () => Bbox | null;
   fitBounds?: (bounds: Bbox) => void;
   getMap?: () => MapLike | null;
+  /** Replace the plugin's declared parameters in the web address; `lat`, `lon`, `zoom`, `plugin` stay GeoLibre's (3.5.0, no-op on Desktop). */
+  setUrlParameters?: (params: URLSearchParams) => void;
   /**
    * The floating panel registration takes the corner it first opens at and a
    * height. GeoLibre 3.4.0 measures the card before the plugin fills it, so a

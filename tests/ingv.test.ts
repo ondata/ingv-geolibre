@@ -14,7 +14,7 @@ import { formatDelay, parseHistory } from "../src/ingv/products";
 import { toCsv } from "../src/ingv/format";
 import { rangeSlider, snap } from "../src/ingv/range-slider";
 import { linkFrom, shareUrl, type Shared } from "../src/ingv/url-params";
-import { addressWith } from "../src/ingv/address";
+import { addressWith, addressWithPlugin } from "../src/ingv/address";
 
 /** Three events of 2026-10-20..22, M >= 2, captured live on 2026-10-23. */
 const fixture = JSON.parse(readFileSync(join(__dirname, "fixtures/events-3.json"), "utf8"));
@@ -490,6 +490,13 @@ describe("share links", () => {
     expect(addressWith(href, ours)).toBe("https://web.geolibre.app/?url=http%3A%2F%2Fx%2Fp.json&other=1&plugin=ingv-geolibre&ingvTime=30d&ingvMag=3,8&ingvArea=world");
     // Turned off: the plugin's parameters go, GeoLibre's view stays.
     expect(addressWith(href, null)).toBe("https://web.geolibre.app/?url=http%3A%2F%2Fx%2Fp.json&lat=40&lon=12&zoom=5&other=1");
+  });
+
+  it("adds plugin= by hand on GeoLibre 3.5.0, leaving its view and the plugin's parameters to the host", () => {
+    const href = "https://web.geolibre.app/?lat=40&lon=12&zoom=5&ingvTime=30d&ingvMag=3,8";
+    expect(addressWithPlugin(href)).toBe("https://web.geolibre.app/?lat=40&lon=12&zoom=5&ingvTime=30d&ingvMag=3,8&plugin=ingv-geolibre");
+    const withPlugin = addressWithPlugin(href);
+    expect(addressWithPlugin(withPlugin)).toBe(withPlugin);
   });
 
   it("searches the shared box, not the wider screen around it", async () => {
