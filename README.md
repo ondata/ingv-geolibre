@@ -11,13 +11,13 @@ Status: **beta**, open for testing.
 ## What it does
 
 - **Search**: period (1 hour to 1 year, or a custom range with time), magnitude range, area (the map view, around a point, the whole world, or one of 173 countries), depth classes, order and limit. Every change runs a new search on the INGV service.
-- **Map**: one circle per event, colour by depth (0-10, 10-30, 30-100, over 100 km), size by magnitude. A click opens the event. **Live zoom** fits the map to the results at every change. On wide screens the plugin opens GeoLibre's Minimap with a wider overview than its default (GeoLibre web today, Desktop from the release after 3.4.0).
+- **Map**: one circle per event, colour by depth (0-10, 10-30, 30-100, over 100 km), size by magnitude. A click opens the event. **Live zoom** fits the map to the results at every change. On wide screens the plugin opens GeoLibre's Minimap with a wider overview than its default (GeoLibre web, and Desktop from 3.5.0).
 - **Results table**: sortable, hover to find the event on the map, export to CSV or GeoJSON, **Add to layers** to keep a search in the project.
 - **Event detail**: time in Italy and UTC, position, depth, magnitude type; the ShakeMap maps when INGV made one; the felt reports map; how location and magnitude changed after the first estimate; a search of the seismicity around the event; a link to the event page on [terremoti.ingv.it](https://terremoti.ingv.it).
 - **Share**: the Share button at the bottom of the panel gives a GeoLibre web link that opens the same search for anyone: period, magnitude, depth, area (the exact box of the map view, the point and radius, or the country), order and limit, plus the event when one is open. A preset period stays relative: a "24 h" link shows the last 24 hours when it is opened. In GeoLibre web the address bar follows the search too, so it can be copied as it is.
 - **Small screens**: below 768 px, where GeoLibre docks the panel under the map, the results become a list with Results and Filters tabs.
 
-- **AI Assistant**: GeoLibre's AI Assistant can drive the panel. Ask, in your own words, "i terremoti più forti in Italia nell'ultima settimana", "c'è stato un terremoto vicino a Napoli oggi?", "apri il più forte: c'è la ShakeMap?", "salvalo come layer": the assistant searches, opens the event or keeps the search as a layer through the panel, and you see it happen. Three tools (`search_earthquakes`, `open_event`, `add_to_layers`) and a short guidance text; on GeoLibre web the assistant also turns the plugin on by itself, with GeoLibre 3.4.0 Desktop turn it on first from the Plugins menu.
+- **AI Assistant**: GeoLibre's AI Assistant can drive the panel. Ask, in your own words, "i terremoti più forti in Italia nell'ultima settimana", "c'è stato un terremoto vicino a Napoli oggi?", "apri il più forte: c'è la ShakeMap?", "salvalo come layer": the assistant searches, opens the event or keeps the search as a layer through the panel, and you see it happen. Three tools (`search_earthquakes`, `open_event`, `add_to_layers`) and a short guidance text; the assistant also turns the plugin on by itself (GeoLibre web, and Desktop from 3.5.0; with Desktop 3.4.0 turn it on first from the Plugins menu).
 
 ![The results table under the map, sorted by magnitude, and the event under the pointer ringed on the map](docs/images/2-table.webp)
 
@@ -57,6 +57,7 @@ For example, the earthquakes of magnitude 4.5 and above of the last 30 days in G
 
 - **Coverage**: the catalogue is detailed for Italy and its seas, down to the smallest events. Elsewhere INGV lists only the stronger earthquakes. Over the 30 days before 23 October 2026 the smallest event listed was M 0.1 in Italy, M 4.5 in the rest of Europe and the Mediterranean, M 5.5 in the rest of the world.
 - **Web or Desktop**: the event search works in both. The ShakeMap layers (contours and stations as GeoJSON) are served without CORS headers, so only GeoLibre Desktop can add them to the map; the ShakeMap images show in both.
+- **GeoLibre Desktop 3.5.0**: the panel shows without its styles, as do those of every external plugin; the search works. The cause is in GeoLibre and is reported in [opengeos/GeoLibre#3210](https://github.com/opengeos/GeoLibre/issues/3210).
 
 ## Data and citation
 
