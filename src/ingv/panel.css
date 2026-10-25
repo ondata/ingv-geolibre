@@ -318,6 +318,21 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
+.ingq-combo-coverage {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ingq-muted);
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ingq-combo-coverage .ingq-info {
+  flex-shrink: 0;
+}
+
 .ingq-combo-search {
   width: 100%;
   box-sizing: border-box;

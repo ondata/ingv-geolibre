@@ -16,13 +16,16 @@ type Option = (typeof FIXED)[number] | { area: "country"; country: Country };
  * a country picked from the list or found by typing its name or ISO code in
  * the search field at the top of the list.
  */
-export function areaCombo(onPick: (area: Area, country: Country | null) => void) {
+export function areaCombo(onPick: (area: Area, country: Country | null) => void, onInfo: () => void) {
   const label = el("span", {}, tr("area.view", "Map view"));
   const chev = el("span", { class: "ingq-combo-chev" }, "▼");
   const button = el("button", { type: "button", class: "ingq-combo-button", "aria-haspopup": "listbox" }, label, chev);
   const input = el("input", { class: "ingq-combo-search", type: "text", placeholder: tr("area.searchPlaceholder", "Search a country…"), autocomplete: "off", spellcheck: false, "aria-label": tr("area.search", "Search a country") });
   const list = el("div", { class: "ingq-combo-items", role: "listbox" });
-  const popup = el("div", { class: "ingq-combo-list" }, el("div", { class: "ingq-combo-field" }, input), list);
+  // The "i" of the footer's sources: mousedown, before the search field's blur closes the list.
+  const info = el("button", { type: "button", class: "ingq-info", title: tr("about.title", "About the data"), onmousedown: (e: Event) => (e.preventDefault(), setOpen(false), onInfo()) }, "i");
+  const coverage = el("div", { class: "ingq-combo-coverage" }, el("span", {}, tr("area.abroad", "The INGV catalogue is centred on Italy: elsewhere it lists mostly the stronger earthquakes.")), info);
+  const popup = el("div", { class: "ingq-combo-list" }, el("div", { class: "ingq-combo-field" }, input), coverage, list);
   const element = el("div", { class: "ingq-combo" }, button, popup);
 
   let open = false;
