@@ -1,5 +1,18 @@
 # Log
 
+## 2026-10-27
+
+- **0.4.0 released** with the charts and the 3.5.0 address (zip sha256 `576ce8c7…`, checked on the download): https://github.com/ondata/ingv-geolibre/releases/tag/v0.4.0. Dev copy 0.4.0 on Desktop. Registry: branch `ondata:update-ingv-geolibre-0.4.0` pushed (cf7f0c8), `npm run validate` passes; PR to opengeos/geolibre-plugins not opened yet (permission denied in the session, left to the user). opengeos/GeoLibre#3210 closed on 2026-10-25 but not in a GeoLibre release yet (latest 3.5.0).
+
+## 2026-10-26
+
+- **Charts** (design "INGV Desktop Grafici", Claude Design, user's choice of Apache ECharts 6.1.0): the results floating panel has tabs Table, Time, Magnitude, Energy (`src/ingv/charts.ts`); stats in `src/ingv/stats.ts` (bars of 1 h to 1 week, at most 60, on Italy's clock across the end of summer time; classes of 0.5; energy log10 E = 1.5 M + 4.8). Hovering a bar or a class lights up its events on the map (ring, the others faded: `ResultsLayer.setLit`); dragging on Time searches that custom period at once (user's choice); preview of the time chart under the result count, a click opens Time. No charts below 768 px (user's choice). Italian texts (32 keys). 60 tests.
+- **Seen headed on web.geolibre.app** with the local build (Tirreno box, 7 days, 194 events): preview and peak "23 Oct, 12-15"; hover on the peak bar lit 25 events on the map; drag 23-25 Oct gave a custom period and 155-156 events with hourly bars; Sequence, Magnitude (2.5 class: 66 events lit), Energy (M 5.5 alone 76% of the energy); Italian switch with the panel open; 412 px: list unchanged, no charts, no horizontal scroll.
+- **Pitfalls met**: ECharts reads `process.env.NODE_ENV` (plugin skipped with "process is not defined": now `define` in the Vite config); `convertFromPixel({xAxisIndex})` gives NaN, `{gridIndex}` works; a redraw with `notMerge` during a drag drops the brush (no highlight while the button is down); a phone rule with `!important` lost to `[hidden]` in GeoLibre web, so the tab follows `matchMedia` in the code.
+- **Minimap closes when the results panel opens** (user, 2026-10-27): it still opens at activation; opening table or charts closes it (`Controller.hideMinimap`, from the floating panel's `onOpen`). Seen headed: Minimap at start, gone after "Charts ↓". 61 tests.
+- **Dev copy with the charts on Desktop** (2026-10-27): `ingv-geolibre-dev` installed from the uncommitted work, version still 0.3.2 (no release yet); `dist/index.js` identical to the dev build (678 KB).
+- **Limits**: GeoLibre caps a floating panel at 560 px wide (`MAX_WIDTH` in `FloatingPanels.tsx`), the design had 900: narrower text column. Bundle 678 KB (233 KB gzip), was 76 KB.
+
 ## 2026-10-25
 
 - **GeoLibre 3.5.0** (released 19:38 UTC). Address now through `app.setUrlParameters` (#3196) when the host has it: only the `ingv*` names, `lat`/`lon`/`zoom` left to the host (the old path deleted them and fought the host's camera sync), `plugin=ingv-geolibre` still added by hand (`addressWithPlugin`, host-reserved, kept so a copied address turns the plugin on); 3.4.0 path unchanged. Checked headed on web.geolibre.app with the local build: period change, pan, reopened address, plugin off. 53 tests. Results stay drawn on MapLibre (not a project layer) although `updateGeoJsonLayer`/`removeLayer` are now released.
