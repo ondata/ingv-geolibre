@@ -2,7 +2,7 @@
 
 ## 2026-10-27
 
-- **0.4.0 released** with the charts and the 3.5.0 address (zip sha256 `576ce8c7…`, checked on the download): https://github.com/ondata/ingv-geolibre/releases/tag/v0.4.0. Dev copy 0.4.0 on Desktop. Registry: branch `ondata:update-ingv-geolibre-0.4.0` pushed (cf7f0c8), `npm run validate` passes; PR to opengeos/geolibre-plugins not opened yet (permission denied in the session, left to the user). opengeos/GeoLibre#3210 closed on 2026-10-25 but not in a GeoLibre release yet (latest 3.5.0).
+- **0.4.0 released** with the charts and the 3.5.0 address (zip sha256 `576ce8c7…`, checked on the download): https://github.com/ondata/ingv-geolibre/releases/tag/v0.4.0. Dev copy 0.4.0 on Desktop. Registry: branch `ondata:update-ingv-geolibre-0.4.0` pushed (cf7f0c8), `npm run validate` passes; PR opengeos/geolibre-plugins#128. opengeos/GeoLibre#3210 closed on 2026-10-25 but not in a GeoLibre release yet (latest 3.5.0).
 
 ## 2026-10-26
 
