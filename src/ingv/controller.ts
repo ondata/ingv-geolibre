@@ -4,6 +4,7 @@ import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
+import { highlighted, timeStats, type Highlight, type TimeStats } from "./stats";
 import { dateLocale, presetLabel, tr } from "./i18n";
 import { DEFAULT_MINIMAP, type Link, type Minimap, type Shared } from "./url-params";
 import {
@@ -23,6 +24,7 @@ import {
 
 export type Area = "view" | "around" | "world" | "country";
 export type SortKey = "time" | "mag" | "depth";
+export type ResultsTab = "table" | "time" | "mag" | "energy";
 
 export interface SearchState {
   time: TimePresetId;
@@ -48,6 +50,10 @@ export interface ViewState {
   view: "search" | "detail";
   selected: EventFeature | null;
   hover: number | null;
+  /** The bar or class of a chart under the pointer, lit up on the map. */
+  lit: Highlight | null;
+  /** Tab of the results panel. */
+  resultsTab: ResultsTab;
   /** Events of the search in the depth classes turned off, null when all are on; capped at the limit. */
   hiddenCount: number | null;
   tableOpen: boolean;
@@ -185,6 +191,8 @@ export class Controller {
     view: "search",
     selected: null,
     hover: null,
+    lit: null,
+    resultsTab: "table",
     hiddenCount: null,
     tableOpen: false,
     liveZoom: true,
@@ -206,6 +214,7 @@ export class Controller {
   /** Opens the results table; set by the plugin entry, which owns the floating panel. */
   openTable: () => void = () => {};
   closeTable: () => void = () => {};
+  private stats: { events: EventCollection | null; time: TimeStats | null } = { events: null, time: null };
 
   constructor(readonly app: IngvHost) {}
 
@@ -251,7 +260,7 @@ export class Controller {
       ]);
       this.state = { ...this.state, hiddenCount: hiddenEvents ? hiddenEvents.features.length : null };
       this.resultsLayer()?.setData(events);
-      this.update({ status: "done", message: "", events });
+      this.update({ status: "done", message: "", events, lit: null });
       if (this.state.liveZoom) this.fitLive(view);
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -306,6 +315,33 @@ export class Controller {
     const shown = feature ?? (this.state.view === "detail" ? this.state.selected : null);
     this.results?.setRing(shown?.properties.eventId ?? null);
     this.update({ hover: feature?.properties.eventId ?? null });
+  }
+
+  /** Bars of time of the current events, computed once per search. */
+  timeStats(): TimeStats | null {
+    const events = this.state.events;
+    if (this.stats.events !== events) this.stats = { events, time: timeStats(events?.features ?? []) };
+    return this.stats.time;
+  }
+
+  /** Light up on the map the events of a chart's bar or class; null clears. */
+  highlight(hl: Highlight | null) {
+    if (JSON.stringify(hl) === JSON.stringify(this.state.lit)) return;
+    const lit = hl ? highlighted(this.state.events?.features ?? [], this.timeStats(), hl) : null;
+    this.results?.setLit(lit ? lit.map((f) => f.properties.eventId) : null);
+    this.update({ lit: hl });
+  }
+
+  /** Open the results panel on a tab. */
+  openResults(tab: ResultsTab) {
+    this.update({ resultsTab: tab });
+    this.openTable();
+  }
+
+  /** A period dragged on the time chart becomes the custom period, searched at once. */
+  pickPeriod(from: number, to: number) {
+    const minute = 60e3;
+    this.set({ time: "custom", from: localMinute(new Date(Math.floor(from / minute) * minute)), to: localMinute(new Date(Math.ceil(to / minute) * minute)) });
   }
 
   /** "5 in hidden depth classes", or "" when no class is off or the hidden ones are empty. */
@@ -427,6 +463,13 @@ export class Controller {
     }
     if (this.app.isControlPanelVisible?.("minimap") === false) this.openedMinimap = true;
     this.app.openControlPanel?.("minimap", { zoomOffset: this.minimap });
+  }
+
+  /** Close the Minimap when the results panel opens: both sit over the bottom of the map (user, 2026-10-27). */
+  hideMinimap() {
+    if (this.app.isControlPanelVisible?.("minimap") === false) return;
+    this.app.closeControlPanel?.("minimap");
+    this.openedMinimap = false;
   }
 
   /** What a shared link gives of the panel and the map now. */

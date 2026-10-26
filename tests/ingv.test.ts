@@ -225,7 +225,7 @@ describe("results layer", () => {
   /** A MapLibre map reduced to what the layer calls. */
   function fakeMap() {
     const sources = new Map<string, { data: unknown; setData(d: unknown): void }>();
-    const layers = new Map<string, { filter?: unknown }>();
+    const layers = new Map<string, { filter?: unknown; paint?: Record<string, unknown> }>();
     const handlers: [string, ...unknown[]][] = [];
     const map = {
       sources,
@@ -237,11 +237,12 @@ describe("results layer", () => {
       addSource: (id: string, s: { data: unknown }) =>
         sources.set(id, { data: s.data, setData(d) { this.data = d; } }),
       getSource: (id: string) => sources.get(id),
-      addLayer: (l: { id: string; filter?: unknown }) => layers.set(l.id, { filter: l.filter }),
+      addLayer: (l: { id: string; filter?: unknown; paint?: Record<string, unknown> }) => layers.set(l.id, { filter: l.filter, paint: { ...l.paint } }),
       getLayer: (id: string) => layers.get(id),
       getLayersOrder: () => [...layers.keys()],
       moveLayer: vi.fn(),
       setFilter: (id: string, f: unknown) => (layers.get(id)!.filter = f),
+      setPaintProperty: (id: string, name: string, value: unknown) => (layers.get(id)!.paint![name] = value),
       removeLayer: (id: string) => layers.delete(id),
       removeSource: (id: string) => sources.delete(id),
     };
@@ -271,6 +272,35 @@ describe("results layer", () => {
     expect(map.layers.size).toBe(2);
     layer.dispose();
     expect(map.layers.size).toBe(0);
+  });
+
+  it("closes the Minimap when the results panel opens, only if it is open", () => {
+    const closeControlPanel = vi.fn();
+    let visible = true;
+    const ctl = new Controller({ closeControlPanel, isControlPanelVisible: () => visible } as unknown as IngvHost);
+    ctl.hideMinimap();
+    expect(closeControlPanel).toHaveBeenCalledWith("minimap");
+    visible = false;
+    ctl.hideMinimap();
+    expect(closeControlPanel).toHaveBeenCalledTimes(1);
+  });
+
+  it("lights up the events of a chart bar and fades the others", () => {
+    const map = fakeMap();
+    const layer = new ResultsLayer(map as unknown as MapLike, () => {}, () => false);
+    layer.setData(normalizeEvents(fixture));
+    layer.setLit([47600972, 47600772]);
+    const lit = ["in", ["get", "eventId"], ["literal", [47600972, 47600772]]];
+    expect(map.layers.get("ingq-results-ring")!.filter).toEqual(["any", ["==", ["get", "eventId"], -1], lit]);
+    expect(map.layers.get("ingq-results-points")!.paint!["circle-opacity"]).toEqual(["case", lit, 1, 0.15]);
+    // Kept across a basemap change.
+    map.layers.clear();
+    map.sources.clear();
+    (map.handlers.find((h) => h[0] === "styledata")![1] as () => void)();
+    expect(map.layers.get("ingq-results-points")!.paint!["circle-opacity"]).toEqual(["case", lit, 1, 0.15]);
+    layer.setLit(null);
+    expect(map.layers.get("ingq-results-ring")!.filter).toEqual(["==", ["get", "eventId"], -1]);
+    expect(map.layers.get("ingq-results-points")!.paint!["circle-opacity"]).toBe(1);
   });
 
   it("opens the clicked event, unless a host tool owns the clicks", () => {

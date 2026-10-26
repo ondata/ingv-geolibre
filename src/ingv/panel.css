@@ -1103,3 +1103,247 @@
     margin-left: -11px;
   }
 }
+
+/* Results panel: table and charts in tabs (design "INGV Desktop Grafici", 2026-10-26) */
+
+.ingq-rtabs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px 0 8px;
+  border-bottom: 1px solid var(--ingq-line);
+}
+
+.ingq-rtab {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  color: #374151;
+  font-size: 13px;
+}
+
+.ingq-rtab.ingq-on {
+  color: var(--ingq-accent-dark);
+  border-bottom-color: var(--ingq-accent);
+  font-weight: 600;
+}
+
+.ingq-rinfo {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ingq-muted);
+}
+
+.ingq-rinfo.ingq-on {
+  color: var(--ingq-accent-dark);
+  font-weight: 500;
+}
+
+.ingq-rpane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ingq-rpane-table {
+  padding-top: 6px;
+}
+
+/* GeoLibre caps a floating panel at 560 px: the text column stays narrow. */
+.ingq-cpane {
+  display: grid;
+  grid-template-columns: minmax(150px, 30%) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 12px 8px 14px;
+}
+
+.ingq-cside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.ingq-ctext {
+  font-size: 12px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.ingq-chint {
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--ingq-faint);
+  text-wrap: pretty;
+}
+
+.ingq-chart {
+  min-width: 0;
+  min-height: 160px;
+}
+
+.ingq-seg {
+  display: flex;
+  align-self: flex-start;
+  border: 1px solid var(--ingq-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ingq-seg button {
+  padding: 3px 10px;
+  border: 0;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ingq-seg button + button {
+  border-left: 1px solid var(--ingq-border);
+}
+
+.ingq-seg button.ingq-on {
+  background: var(--ingq-accent-soft);
+  color: var(--ingq-accent-dark);
+  font-weight: 600;
+}
+
+.ingq-erows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.ingq-erow {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #374151;
+}
+
+.ingq-erow.ingq-on {
+  background: var(--ingq-accent-soft);
+}
+
+.ingq-ehead {
+  color: var(--ingq-muted);
+  padding-bottom: 4px;
+}
+
+.ingq-ehead span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ingq-key {
+  width: 10px;
+  height: 8px;
+}
+
+.ingq-ebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.ingq-ebar > span:first-child {
+  height: 12px;
+  min-width: 1px;
+  border-radius: 1px;
+}
+
+.ingq-key-n,
+.ingq-fill-n {
+  background: var(--ingq-faint);
+}
+
+.ingq-key-e,
+.ingq-fill-e {
+  background: var(--ingq-accent);
+}
+
+.ingq-fill-e + span {
+  color: var(--ingq-accent-dark);
+}
+
+/* Preview of the time chart in the right panel */
+
+.ingq-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border: 1px solid var(--ingq-line);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.ingq-preview.ingq-on {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.ingq-pbars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 40px;
+}
+
+.ingq-pbars > span {
+  flex: 1;
+  min-width: 0;
+  background: var(--ingq-faint);
+  border-radius: 1px 1px 0 0;
+}
+
+.ingq-pbars > .ingq-peak {
+  background: #374151;
+}
+
+.ingq-pbars > .ingq-lit {
+  background: var(--ingq-accent);
+}
+
+.ingq-pbars > .ingq-dim {
+  background: var(--ingq-line);
+}
+
+.ingq-pdates {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--ingq-mono);
+  font-size: 10px;
+  color: var(--ingq-faint);
+  border-top: 1px solid var(--ingq-line);
+  padding-top: 3px;
+}
+
+.ingq-ptext {
+  font-size: 12px;
+  color: #374151;
+  align-items: baseline;
+}
+
+/* No charts on a phone for now (2026-10-26): the results panel keeps the table (charts.ts). */
+@media (max-width: 767px) {
+  .ingq-preview,
+  .ingq-rtabs {
+    display: none !important;
+  }
+}

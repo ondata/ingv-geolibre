@@ -68,6 +68,8 @@ function writeDevManifest(): Plugin {
 }
 
 export default defineConfig(({ mode }) => ({
+  // ECharts reads `process.env.NODE_ENV`; a library build leaves it, and the browser has no `process`.
+  define: { "process.env.NODE_ENV": JSON.stringify("production") },
   // publicDir: false, // enable with the bundlePluginAssets() recipe above
   resolve: {
     alias: {

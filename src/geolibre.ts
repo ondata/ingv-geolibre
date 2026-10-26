@@ -3,7 +3,7 @@ import { PANEL_ID, PLUGIN_ID, PLUGIN_LABEL, PLUGIN_NAME, PLUGIN_VERSION, TABLE_I
 import { Controller } from "./ingv/controller";
 import type { IngvHost } from "./ingv/host";
 import { renderPanel } from "./ingv/panel";
-import { renderTable } from "./ingv/table";
+import { renderResults } from "./ingv/charts";
 import { syncAddress } from "./ingv/address";
 import { bindLanguage, onLanguageChange, tr } from "./ingv/i18n";
 import { registerAssistantTools } from "./ingv/assistant";
@@ -16,7 +16,7 @@ import "./ingv/panel.css";
  *
  * No map control, so GeoLibre shows it as a plain toggle in the Plugins menu.
  * Toggling it on opens the right panel (search and event detail); a search
- * opens the results table in a floating panel at the bottom left of the map.
+ * opens the results (table and charts) in a floating panel at the bottom left of the map.
  */
 
 /** `engines` is part of GeoLibre's plugin contract but not of the template's copy. */
@@ -71,11 +71,15 @@ export const plugin: Plugin = {
     const unregisterTable = host.registerFloatingPanel?.({
       id: TABLE_ID,
       title: () => tr("table.title", "Results"),
-      defaultWidth: 600,
+      // The widest GeoLibre allows (3.5.0).
+      defaultWidth: 560,
       defaultHeight: 300,
       position: "bottom-left",
-      render: followingLanguage((container) => renderTable(ctl, container)),
-      onOpen: () => ctl.update({ tableOpen: true }),
+      render: followingLanguage((container) => renderResults(ctl, container)),
+      onOpen: () => {
+        ctl.hideMinimap();
+        ctl.update({ tableOpen: true });
+      },
       onClose: () => ctl.update({ tableOpen: false }),
     });
     if (unregisterTable) {

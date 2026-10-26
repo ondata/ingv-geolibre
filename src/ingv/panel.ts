@@ -9,6 +9,8 @@ import { DEFAULT_MAGNITUDE, DEPTH_SCALE, MAGNITUDE_SCALE, TIME_PRESETS, type Ord
 import { rangeSlider } from "./range-slider";
 import { dateLocale, presetLabel, tr, trCount } from "./i18n";
 import { shareButton } from "./share";
+import { barWhen, percent } from "./charts";
+import { barStart } from "./stats";
 
 const ORDERS: { id: OrderBy; label: () => string }[] = [
   { id: "time", label: () => tr("order.time", "Newest first") },
@@ -222,8 +224,47 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
   const count = el("span", { class: "ingq-count" });
   const strongest = el("span", { class: "ingq-muted" });
   const zoomLink = el("a", { href: "#", class: "ingq-link", onclick: (e: Event) => (e.preventDefault(), ctl.zoomToResults()) }, tr("result.zoom", "Zoom to results"));
-  const tableLink = el("a", { href: "#", class: "ingq-link ingq-table-link", onclick: (e: Event) => (e.preventDefault(), ctl.openTable()) }, tr("result.table", "Show table"));
+  const tableLink = el("a", { href: "#", class: "ingq-link ingq-table-link", onclick: (e: Event) => (e.preventDefault(), ctl.openResults("table")) }, tr("result.table", "Show table"));
   const message = el("div", { class: "ingq-message" });
+  // Preview of the time chart: a hover lights up its events, a click opens the charts.
+  const previewBars = el("div", { class: "ingq-pbars" });
+  const previewFrom = el("span");
+  const previewTo = el("span");
+  const previewText = el("span");
+  const preview = el(
+    "div",
+    { class: "ingq-preview", title: tr("preview.hint", "Open the charts"), onclick: () => ctl.openResults("time"), onmouseleave: () => ctl.highlight(null) },
+    previewBars,
+    el("div", { class: "ingq-pdates" }, previewFrom, previewTo),
+    el("div", { class: "ingq-row ingq-ptext" }, previewText, el("span", { class: "ingq-link" }, tr("preview.open", "Charts ↓"))),
+  );
+  let previewOf: unknown = null;
+  function drawPreview() {
+    const features = ctl.state.events?.features ?? [];
+    const stats = ctl.timeStats();
+    preview.hidden = ctl.state.status !== "done" || !stats;
+    if (!stats) return;
+    if (previewOf !== ctl.state.events) {
+      previewOf = ctl.state.events;
+      const max = Math.max(...stats.counts);
+      previewBars.replaceChildren(
+        ...stats.counts.map((n, i) => el("span", { style: { height: `${Math.max(n ? 2 : 0, (n / max) * 40)}px` }, onmouseenter: () => ctl.highlight({ time: i }) })),
+      );
+      previewFrom.textContent = italyDateShort(new Date(barStart(stats, 0)));
+      previewTo.textContent = italyDateShort(new Date(barStart(stats, stats.counts.length) - 1));
+      previewText.textContent = tr("preview.text", "{{low}} below M 3 · peak {{when}}", {
+        low: percent(features.filter((f) => f.properties.mag < 3).length / features.length),
+        when: barWhen(stats, stats.peak),
+      });
+    }
+    const lit = ctl.state.lit;
+    [...previewBars.children].forEach((bar, i) => {
+      bar.classList.toggle("ingq-peak", !lit && i === stats.peak);
+      bar.classList.toggle("ingq-lit", !!lit && "time" in lit && lit.time === i);
+      bar.classList.toggle("ingq-dim", !!lit && !("time" in lit && lit.time === i));
+    });
+    preview.classList.toggle("ingq-on", ctl.state.tableOpen && ctl.state.resultsTab !== "table");
+  }
   const legend = el(
     "div",
     { class: "ingq-legend" },
@@ -249,6 +290,7 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
     searchButton,
     el("div", { class: "ingq-row" }, el("div", {}, count, strongest), el("div", { class: "ingq-links" }, zoomLink, tableLink)),
     message,
+    preview,
   );
 
   // More filters
@@ -391,7 +433,8 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
     message.hidden = !message.textContent;
     live.checked = st.liveZoom;
     zoomLink.hidden = st.liveZoom || st.status !== "done" || !features.length;
-    tableLink.hidden = st.tableOpen || !features.length;
+    tableLink.hidden = (st.tableOpen && st.resultsTab === "table") || !features.length;
+    drawPreview();
 
     element.dataset.show = tab;
     resultsTab.classList.toggle("ingq-on", tab === "results");

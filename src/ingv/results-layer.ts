@@ -19,6 +19,8 @@ const EMPTY: EventCollection = { type: "FeatureCollection", features: [] };
 export class ResultsLayer {
   private data: EventCollection = EMPTY;
   private ring: number | null = null;
+  /** Events a chart lights up: ringed, the others faded. */
+  private lit: number[] | null = null;
   private readonly onStyleData = () => this.ensure();
   private readonly onClick = (event: { features?: { properties: Record<string, unknown> }[] }) => {
     if (this.toolActive()) return;
@@ -62,7 +64,7 @@ export class ResultsLayer {
         id: POINTS_ID,
         type: "circle",
         source: SOURCE_ID,
-        paint: { "circle-color": circleColor(), "circle-radius": circleRadius(), "circle-stroke-color": "#333333", "circle-stroke-width": 0.5 },
+        paint: { "circle-color": circleColor(), "circle-radius": circleRadius(), "circle-stroke-color": "#333333", "circle-stroke-width": 0.5, ...this.fade() },
       });
     }
     if (!map.getLayer(RING_ID)) {
@@ -80,23 +82,42 @@ export class ResultsLayer {
   }
 
   private ringFilter(): unknown {
-    return ["==", ["get", "eventId"], this.ring ?? -1];
+    const one = ["==", ["get", "eventId"], this.ring ?? -1];
+    return this.lit ? ["any", one, ["in", ["get", "eventId"], ["literal", this.lit]]] : one;
+  }
+
+  /** Opacity of the points: the ones a chart does not light up fade. */
+  private fade(): Record<string, unknown> {
+    const opacity = this.lit ? ["case", ["in", ["get", "eventId"], ["literal", this.lit]], 1, 0.15] : 1;
+    return { "circle-opacity": opacity, "circle-stroke-opacity": opacity };
+  }
+
+  private refresh(): void {
+    this.ensure();
+    if (this.map.getLayer(RING_ID)) this.map.setFilter(RING_ID, this.ringFilter());
+    if (this.map.getLayer(POINTS_ID)) for (const [name, value] of Object.entries(this.fade())) this.map.setPaintProperty(POINTS_ID, name, value);
   }
 
   setData(events: EventCollection): void {
     // Strongest first, so the small circles of a sequence are drawn over the big one.
     this.data = { ...events, features: [...events.features].sort((a, b) => b.properties.mag - a.properties.mag) };
     this.ring = null;
+    this.lit = null;
     this.ensure();
     this.map.getSource(SOURCE_ID)?.setData(this.data);
-    if (this.map.getLayer(RING_ID)) this.map.setFilter(RING_ID, this.ringFilter());
+    this.refresh();
   }
 
   /** A ring around one event: the row under the pointer, or the event in the panel. */
   setRing(eventId: number | null): void {
     this.ring = eventId;
-    this.ensure();
-    if (this.map.getLayer(RING_ID)) this.map.setFilter(RING_ID, this.ringFilter());
+    this.refresh();
+  }
+
+  /** Light up the events of a bar or a class of the charts; null: all as usual. */
+  setLit(eventIds: number[] | null): void {
+    this.lit = eventIds;
+    this.refresh();
   }
 
   dispose(): void {
