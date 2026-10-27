@@ -141,6 +141,8 @@ export const IT: Record<string, string> = {
   "share.hint": "Condividi questa ricerca come link",
   "share.searchTitle": "Terremoti INGV: {{search}}",
   "share.title": "Condividi",
+  "show.hint": "Nascondi i terremoti per usare la mappa per altro; la ricerca resta",
+  "show.title": "Mostra sulla mappa",
   "status.searching": "Ricerca in corso…",
   "tab.energy": "Energia",
   "tab.filters": "Filtri",

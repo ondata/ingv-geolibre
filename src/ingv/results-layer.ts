@@ -21,6 +21,8 @@ export class ResultsLayer {
   private ring: number | null = null;
   /** Events a chart lights up: ringed, the others faded. */
   private lit: number[] | null = null;
+  /** "Show on map" in the panel: off hides the circles and keeps the search. */
+  private visible = true;
   private readonly onStyleData = () => this.ensure();
   private readonly onClick = (event: { features?: { properties: Record<string, unknown> }[] }) => {
     if (this.toolActive()) return;
@@ -64,6 +66,7 @@ export class ResultsLayer {
         id: POINTS_ID,
         type: "circle",
         source: SOURCE_ID,
+        layout: { visibility: this.visibility() },
         paint: { "circle-color": circleColor(), "circle-radius": circleRadius(), "circle-stroke-color": "#333333", "circle-stroke-width": 0.5, ...this.fade() },
       });
     }
@@ -73,6 +76,7 @@ export class ResultsLayer {
         type: "circle",
         source: SOURCE_ID,
         filter: this.ringFilter(),
+        layout: { visibility: this.visibility() },
         paint: { "circle-radius": ["+", circleRadius(), 6], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 3, "circle-stroke-color": "#2563eb" },
       });
     }
@@ -90,6 +94,17 @@ export class ResultsLayer {
   private fade(): Record<string, unknown> {
     const opacity = this.lit ? ["case", ["in", ["get", "eventId"], ["literal", this.lit]], 1, 0.15] : 1;
     return { "circle-opacity": opacity, "circle-stroke-opacity": opacity };
+  }
+
+  private visibility(): "visible" | "none" {
+    return this.visible ? "visible" : "none";
+  }
+
+  /** Show or hide the circles of the search, without dropping them. */
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    this.ensure();
+    for (const id of LAYER_IDS) if (this.map.getLayer(id)) this.map.setLayoutProperty(id, "visibility", this.visibility());
   }
 
   private refresh(): void {

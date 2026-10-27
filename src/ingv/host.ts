@@ -32,6 +32,7 @@ export interface MapLike {
   moveLayer(id: string): void;
   setFilter(id: string, filter: unknown): void;
   setPaintProperty(id: string, name: string, value: unknown): void;
+  setLayoutProperty(id: string, name: string, value: unknown): void;
   removeLayer(id: string): void;
   removeSource(id: string): void;
 }

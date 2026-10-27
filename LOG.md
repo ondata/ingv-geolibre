@@ -2,6 +2,7 @@
 
 ## 2026-10-27
 
+- **"Show on map"** (issue #1, user's pick of the three options): a checkbox under the result count hides the circles and keeps the search (`ResultsLayer.setVisible`, layout `visibility` on both layers, kept across a basemap change and new searches). Checked headed: off hides, a new period keeps them hidden, on shows them again. 62 tests.
 - **Issue ondata/ingv-geolibre#1** (user): no way to remove or hide the earthquakes from the map without turning the plugin off.
 - **Desktop with the dev copy 0.4.0** (user's screenshot, 08:01): panel styled, in Italian, 226 events in 7 days, time preview ("83% sotto M 3 · picco il 23 ott, 12-15"), Minimap open at start. Diagnostics shows 2 entries, not read yet.
 - **GeoLibre 3.5.1** (released 00:35 UTC, told by the openrndt-geolibre session, checked on the release): plugin stylesheets apply again on Desktop (opengeos/GeoLibre#3212, fixes #3210); README updated. New `getMapCrs()`/`onMapCrsChange()` (#3214): our results are a GeoJSON source on MapLibre, not WMS; not checked how they look on a map drawn in another CRS.

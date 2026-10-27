@@ -59,6 +59,8 @@ export interface ViewState {
   tableOpen: boolean;
   /** Fit the map to the results after every search. */
   liveZoom: boolean;
+  /** Draw the results on the map; off hides them and keeps the search (issue #1). */
+  showOnMap: boolean;
   sort: { key: SortKey; dir: 1 | -1 };
 }
 
@@ -196,6 +198,7 @@ export class Controller {
     hiddenCount: null,
     tableOpen: false,
     liveZoom: true,
+    showOnMap: true,
     sort: { key: "time", dir: -1 },
   };
   private listeners = new Set<() => void>();
@@ -487,6 +490,11 @@ export class Controller {
       minimap: window.innerWidth >= 768 && this.app.isControlPanelVisible?.("minimap") === false ? "off" : this.minimap,
       view: map && centre ? { lon: centre.lng, lat: centre.lat, zoom: map.getZoom() } : null,
     };
+  }
+
+  setShowOnMap(on: boolean) {
+    this.resultsLayer()?.setVisible(on);
+    this.update({ showOnMap: on });
   }
 
   setLiveZoom(on: boolean) {

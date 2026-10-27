@@ -225,7 +225,7 @@ describe("results layer", () => {
   /** A MapLibre map reduced to what the layer calls. */
   function fakeMap() {
     const sources = new Map<string, { data: unknown; setData(d: unknown): void }>();
-    const layers = new Map<string, { filter?: unknown; paint?: Record<string, unknown> }>();
+    const layers = new Map<string, { filter?: unknown; paint?: Record<string, unknown>; layout?: Record<string, unknown> }>();
     const handlers: [string, ...unknown[]][] = [];
     const map = {
       sources,
@@ -237,12 +237,14 @@ describe("results layer", () => {
       addSource: (id: string, s: { data: unknown }) =>
         sources.set(id, { data: s.data, setData(d) { this.data = d; } }),
       getSource: (id: string) => sources.get(id),
-      addLayer: (l: { id: string; filter?: unknown; paint?: Record<string, unknown> }) => layers.set(l.id, { filter: l.filter, paint: { ...l.paint } }),
+      addLayer: (l: { id: string; filter?: unknown; paint?: Record<string, unknown>; layout?: Record<string, unknown> }) =>
+        layers.set(l.id, { filter: l.filter, paint: { ...l.paint }, layout: { ...l.layout } }),
       getLayer: (id: string) => layers.get(id),
       getLayersOrder: () => [...layers.keys()],
       moveLayer: vi.fn(),
       setFilter: (id: string, f: unknown) => (layers.get(id)!.filter = f),
       setPaintProperty: (id: string, name: string, value: unknown) => (layers.get(id)!.paint![name] = value),
+      setLayoutProperty: (id: string, name: string, value: unknown) => (layers.get(id)!.layout![name] = value),
       removeLayer: (id: string) => layers.delete(id),
       removeSource: (id: string) => sources.delete(id),
     };
@@ -272,6 +274,22 @@ describe("results layer", () => {
     expect(map.layers.size).toBe(2);
     layer.dispose();
     expect(map.layers.size).toBe(0);
+  });
+
+  it("hides and shows the earthquakes without dropping them, also after a basemap change (issue #1)", () => {
+    const map = fakeMap();
+    const layer = new ResultsLayer(map as unknown as MapLike, () => {}, () => false);
+    layer.setData(normalizeEvents(fixture));
+    layer.setVisible(false);
+    const vis = () => [...map.layers.values()].map((l) => l.layout!.visibility);
+    expect(vis()).toEqual(["none", "none"]);
+    expect((map.sources.get("ingq-results")!.data as { features: unknown[] }).features.length).toBe(3);
+    map.layers.clear();
+    map.sources.clear();
+    (map.handlers.find((h) => h[0] === "styledata")![1] as () => void)();
+    expect(vis()).toEqual(["none", "none"]);
+    layer.setVisible(true);
+    expect(vis()).toEqual(["visible", "visible"]);
   });
 
   it("closes the Minimap when the results panel opens, only if it is open", () => {

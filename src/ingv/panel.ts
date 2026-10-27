@@ -284,11 +284,19 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
   );
   const depthButtons = [...legend.querySelectorAll<HTMLButtonElement>(".ingq-depth")];
   const searchButton = el("button", { type: "button", class: "ingq-primary ingq-search-btn", onclick: () => void ctl.run() }, tr("search", "Search"));
+  const show = el("input", { type: "checkbox", class: "ingq-check", onchange: () => ctl.setShowOnMap(show.checked) });
+  const showRow = el(
+    "label",
+    { class: "ingq-live", title: tr("show.hint", "Hide the earthquakes to use the map for something else; the search stays") },
+    show,
+    el("span", {}, tr("show.title", "Show on map")),
+  );
   const result = el(
     "div",
     { class: "ingq-group ingq-result" },
     searchButton,
     el("div", { class: "ingq-row" }, el("div", {}, count, strongest), el("div", { class: "ingq-links" }, zoomLink, tableLink)),
+    showRow,
     message,
     preview,
   );
@@ -432,6 +440,8 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
     }
     message.hidden = !message.textContent;
     live.checked = st.liveZoom;
+    show.checked = st.showOnMap;
+    showRow.hidden = st.status !== "done" || !features.length;
     zoomLink.hidden = st.liveZoom || st.status !== "done" || !features.length;
     tableLink.hidden = (st.tableOpen && st.resultsTab === "table") || !features.length;
     drawPreview();
