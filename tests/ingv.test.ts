@@ -494,6 +494,7 @@ describe("share links", () => {
     eventId: null,
     liveZoom: true,
     minimap: -6,
+    faults: false,
     view: null,
     ...extra,
   });
@@ -511,6 +512,7 @@ describe("share links", () => {
       [{ area: "around", radiusKm: 50 }, { centre: { lat: 38.1234, lon: 15.5 } }],
       [{ time: "custom", from: "2026-10-01T08:30", to: "2026-10-02T20:15" }, { eventId: 47616612, liveZoom: false, minimap: -8.5 }],
       [{}, { minimap: "off" }],
+      [{}, { faults: true }],
     ];
     for (const [search, extra] of cases) {
       const s = shared(search, extra);
@@ -519,6 +521,7 @@ describe("share links", () => {
       expect(link.eventId).toBe(s.eventId);
       expect(link.liveZoom).toBe(s.liveZoom ? null : false);
       expect(link.minimap).toBe(s.minimap === -6 ? null : s.minimap);
+      expect(link.faults).toBe(s.faults);
     }
   });
 

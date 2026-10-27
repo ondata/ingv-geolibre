@@ -1347,3 +1347,51 @@
     display: none !important;
   }
 }
+
+/* Capable faults (ISPRA ITHACA): line keys and the popup on the map */
+
+.ingq-fault-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #374151;
+}
+
+.ingq-fault-line {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.ingq-fault-key .ingq-fault-line {
+  margin-right: 0;
+}
+
+.ingq-fault-pop {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 260px;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  font: 12px/1.4 "IBM Plex Sans", system-ui, sans-serif;
+  color: #1f2937;
+}
+
+.ingq-fault-pop .ingq-muted {
+  color: #6b7280;
+}
+
+.ingq-fault-pop a {
+  color: #2563eb;
+  text-decoration: none;
+}

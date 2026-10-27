@@ -50,7 +50,8 @@ const hour = (t: number) => italyTime(new Date(t)).slice(0, 2);
 export function barWhen(stats: TimeStats, i: number): string {
   const t = barStart(stats, i);
   const day = italyDateShort(new Date(t));
-  if (stats.bin < DAY) return tr("chart.whenHours", "on {{day}}, {{from}}‑{{to}}", { day, from: hour(t), to: hour(t + stats.bin) });
+  // A bar that ends at midnight ends at 24, not 00.
+  if (stats.bin < DAY) return tr("chart.whenHours", "on {{day}}, {{from}}‑{{to}}", { day, from: hour(t), to: hour(t + stats.bin).replace(/^00$/, "24") });
   if (stats.bin === DAY) return tr("chart.whenDay", "on {{day}}", { day });
   return tr("chart.whenWeek", "in the week from {{day}}", { day });
 }

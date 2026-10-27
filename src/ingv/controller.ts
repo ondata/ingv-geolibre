@@ -4,6 +4,7 @@ import { fetchEvents, type EventCollection, type EventFeature } from "./events";
 import type { IngvHost, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
+import { fetchFaults, FaultsLayer } from "./faults";
 import { highlighted, timeStats, type Highlight, type TimeStats } from "./stats";
 import { dateLocale, presetLabel, tr } from "./i18n";
 import { DEFAULT_MINIMAP, type Link, type Minimap, type Shared } from "./url-params";
@@ -61,6 +62,8 @@ export interface ViewState {
   liveZoom: boolean;
   /** Draw the results on the map; off hides them and keeps the search (issue #1). */
   showOnMap: boolean;
+  /** ISPRA's capable faults on the map; "loading" while the catalogue downloads. */
+  faults: "off" | "loading" | "on" | "error";
   sort: { key: SortKey; dir: 1 | -1 };
 }
 
@@ -199,6 +202,7 @@ export class Controller {
     tableOpen: false,
     liveZoom: true,
     showOnMap: true,
+    faults: "off",
     sort: { key: "time", dir: -1 },
   };
   private listeners = new Set<() => void>();
@@ -427,6 +431,7 @@ export class Controller {
       this.showMinimap();
     }
     this.liveFit = link.box ? { view: null, searched: link.box } : null;
+    if (link.faults) void this.setFaults(true);
     await this.run();
     // Live zoom has moved the map to the results; else the map goes to the box.
     if (link.box && !(this.state.liveZoom && this.state.events?.features.length)) {
@@ -486,11 +491,35 @@ export class Controller {
       centre: this.usedCentre,
       eventId: this.state.view === "detail" ? (this.state.selected?.properties.eventId ?? null) : null,
       liveZoom: this.state.liveZoom,
+      faults: this.state.faults === "on" || this.state.faults === "loading",
       // A Minimap closed by the user on a wide screen travels as "off".
       minimap: window.innerWidth >= 768 && this.app.isControlPanelVisible?.("minimap") === false ? "off" : this.minimap,
       view: map && centre ? { lon: centre.lng, lat: centre.lat, zoom: map.getZoom() } : null,
     };
   }
+
+  private faultsLayer: FaultsLayer | null = null;
+
+  /** Show or hide ISPRA's capable faults; the catalogue is downloaded once, at the first "on". */
+  async setFaults(on: boolean) {
+    if (!on) {
+      this.faultsLayer?.dispose();
+      this.faultsLayer = null;
+      return this.update({ faults: "off" });
+    }
+    const map = this.app.getMap?.();
+    if (!map || this.faultsLayer) return;
+    this.update({ faults: "loading" });
+    try {
+      this.faultsData ??= await fetchFaults();
+      if (this.state.faults !== "loading") return;
+      this.faultsLayer = new FaultsLayer(map, this.faultsData, () => !!this.app.getActiveMapTool?.());
+      this.update({ faults: "on" });
+    } catch (error) {
+      this.update({ faults: "error", message: error instanceof Error ? error.message : String(error) });
+    }
+  }
+  private faultsData: Awaited<ReturnType<typeof fetchFaults>> | null = null;
 
   setShowOnMap(on: boolean) {
     this.resultsLayer()?.setVisible(on);
@@ -559,6 +588,8 @@ export class Controller {
     this.running?.abort();
     this.results?.dispose();
     this.results = null;
+    this.faultsLayer?.dispose();
+    this.faultsLayer = null;
     this.listeners.clear();
   }
 }

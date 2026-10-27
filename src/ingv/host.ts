@@ -26,9 +26,10 @@ export interface MapLike {
   getCanvas(): HTMLCanvasElement;
   addSource(id: string, source: unknown): void;
   getSource(id: string): { setData(data: unknown): void } | undefined;
-  addLayer(layer: unknown): void;
+  addLayer(layer: unknown, beforeId?: string): void;
   getLayer(id: string): unknown;
   getLayersOrder(): string[];
+  queryRenderedFeatures(point: number[], options: { layers: string[] }): { properties: Record<string, unknown> }[];
   moveLayer(id: string): void;
   setFilter(id: string, filter: unknown): void;
   setPaintProperty(id: string, name: string, value: unknown): void;
