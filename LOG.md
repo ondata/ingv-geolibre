@@ -2,6 +2,7 @@
 
 ## 2026-10-27
 
+- **Issue ondata/ingv-geolibre#1** (user): no way to remove or hide the earthquakes from the map without turning the plugin off.
 - **Desktop with the dev copy 0.4.0** (user's screenshot, 08:01): panel styled, in Italian, 226 events in 7 days, time preview ("83% sotto M 3 · picco il 23 ott, 12-15"), Minimap open at start. Diagnostics shows 2 entries, not read yet.
 - **GeoLibre 3.5.1** (released 00:35 UTC, told by the openrndt-geolibre session, checked on the release): plugin stylesheets apply again on Desktop (opengeos/GeoLibre#3212, fixes #3210); README updated. New `getMapCrs()`/`onMapCrsChange()` (#3214): our results are a GeoJSON source on MapLibre, not WMS; not checked how they look on a map drawn in another CRS.
 - **0.4.0 released** with the charts and the 3.5.0 address; notes thank @gbvitrano for the inspiration for the charts (zip sha256 `576ce8c7…`, checked on the download): https://github.com/ondata/ingv-geolibre/releases/tag/v0.4.0. Dev copy 0.4.0 on Desktop. Registry: branch `ondata:update-ingv-geolibre-0.4.0` pushed (cf7f0c8), `npm run validate` passes; PR opengeos/geolibre-plugins#128. opengeos/GeoLibre#3210 closed on 2026-10-25 but not in a GeoLibre release yet (latest 3.5.0).
