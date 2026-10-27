@@ -1,10 +1,12 @@
 import type { Country } from "./countries";
 import { scrollParent } from "./dom";
 import { fetchEvents, type EventCollection, type EventFeature } from "./events";
-import type { IngvHost, Padding } from "./host";
+import type { IngvHost, MapLike, Padding } from "./host";
 import { addToProject, DEPTH_CLASSES, LAYER_NAME } from "./layer";
 import { ResultsLayer } from "./results-layer";
 import { fetchFaults, FaultsLayer } from "./faults";
+import { DissLayer, fetchDiss } from "./diss";
+import type { MapOverlay } from "./overlay";
 import { highlighted, timeStats, type Highlight, type TimeStats } from "./stats";
 import { dateLocale, presetLabel, tr } from "./i18n";
 import { DEFAULT_MINIMAP, type Link, type Minimap, type Shared } from "./url-params";
@@ -26,6 +28,8 @@ import {
 export type Area = "view" | "around" | "world" | "country";
 export type SortKey = "time" | "mag" | "depth";
 export type ResultsTab = "table" | "time" | "mag" | "energy";
+type OverlayName = "faults" | "diss";
+type OverlayState = "off" | "loading" | "on" | "error";
 
 export interface SearchState {
   time: TimePresetId;
@@ -63,7 +67,9 @@ export interface ViewState {
   /** Draw the results on the map; off hides them and keeps the search (issue #1). */
   showOnMap: boolean;
   /** ISPRA's capable faults on the map; "loading" while the catalogue downloads. */
-  faults: "off" | "loading" | "on" | "error";
+  faults: OverlayState;
+  /** INGV's seismogenic sources (DISS) on the map. */
+  diss: OverlayState;
   sort: { key: SortKey; dir: 1 | -1 };
 }
 
@@ -203,6 +209,7 @@ export class Controller {
     liveZoom: true,
     showOnMap: true,
     faults: "off",
+    diss: "off",
     sort: { key: "time", dir: -1 },
   };
   private listeners = new Set<() => void>();
@@ -432,6 +439,7 @@ export class Controller {
     }
     this.liveFit = link.box ? { view: null, searched: link.box } : null;
     if (link.faults) void this.setFaults(true);
+    if (link.diss) void this.setDiss(true);
     await this.run();
     // Live zoom has moved the map to the results; else the map goes to the box.
     if (link.box && !(this.state.liveZoom && this.state.events?.features.length)) {
@@ -492,34 +500,48 @@ export class Controller {
       eventId: this.state.view === "detail" ? (this.state.selected?.properties.eventId ?? null) : null,
       liveZoom: this.state.liveZoom,
       faults: this.state.faults === "on" || this.state.faults === "loading",
+      diss: this.state.diss === "on" || this.state.diss === "loading",
       // A Minimap closed by the user on a wide screen travels as "off".
       minimap: window.innerWidth >= 768 && this.app.isControlPanelVisible?.("minimap") === false ? "off" : this.minimap,
       view: map && centre ? { lon: centre.lng, lat: centre.lat, zoom: map.getZoom() } : null,
     };
   }
 
-  private faultsLayer: FaultsLayer | null = null;
+  /** Reference layers drawn under the earthquakes: the data downloaded once, at the first "on". */
+  private overlays: { [K in OverlayName]: { layer: MapOverlay | null; data: unknown } } = {
+    faults: { layer: null, data: null },
+    diss: { layer: null, data: null },
+  };
 
-  /** Show or hide ISPRA's capable faults; the catalogue is downloaded once, at the first "on". */
-  async setFaults(on: boolean) {
+  /** Show or hide ISPRA's capable faults. */
+  setFaults(on: boolean) {
+    return this.setOverlay("faults", on, fetchFaults, (map, data, tool) => new FaultsLayer(map, data, tool));
+  }
+
+  /** Show or hide INGV's seismogenic sources (DISS). */
+  setDiss(on: boolean) {
+    return this.setOverlay("diss", on, fetchDiss, (map, data, tool) => new DissLayer(map, data, tool));
+  }
+
+  private async setOverlay<T>(name: OverlayName, on: boolean, fetchData: () => Promise<T>, make: (map: MapLike, data: T, toolActive: () => boolean) => MapOverlay) {
+    const o = this.overlays[name];
     if (!on) {
-      this.faultsLayer?.dispose();
-      this.faultsLayer = null;
-      return this.update({ faults: "off" });
+      o.layer?.dispose();
+      o.layer = null;
+      return this.update({ [name]: "off" });
     }
     const map = this.app.getMap?.();
-    if (!map || this.faultsLayer) return;
-    this.update({ faults: "loading" });
+    if (!map || o.layer) return;
+    this.update({ [name]: "loading" });
     try {
-      this.faultsData ??= await fetchFaults();
-      if (this.state.faults !== "loading") return;
-      this.faultsLayer = new FaultsLayer(map, this.faultsData, () => !!this.app.getActiveMapTool?.());
-      this.update({ faults: "on" });
+      o.data ??= await fetchData();
+      if (this.state[name] !== "loading") return;
+      o.layer = make(map, o.data as T, () => !!this.app.getActiveMapTool?.());
+      this.update({ [name]: "on" });
     } catch (error) {
-      this.update({ faults: "error", message: error instanceof Error ? error.message : String(error) });
+      this.update({ [name]: "error", message: error instanceof Error ? error.message : String(error) });
     }
   }
-  private faultsData: Awaited<ReturnType<typeof fetchFaults>> | null = null;
 
   setShowOnMap(on: boolean) {
     this.resultsLayer()?.setVisible(on);
@@ -588,8 +610,10 @@ export class Controller {
     this.running?.abort();
     this.results?.dispose();
     this.results = null;
-    this.faultsLayer?.dispose();
-    this.faultsLayer = null;
+    for (const o of Object.values(this.overlays)) {
+      o.layer?.dispose();
+      o.layer = null;
+    }
     this.listeners.clear();
   }
 }

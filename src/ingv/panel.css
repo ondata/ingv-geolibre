@@ -1395,3 +1395,11 @@
   color: #2563eb;
   text-decoration: none;
 }
+
+.ingq-fault-fill {
+  display: inline-block;
+  width: 14px;
+  height: 9px;
+  border-radius: 2px;
+  opacity: 0.7;
+}

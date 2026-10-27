@@ -31,10 +31,12 @@ const EVENT = "ingvEvent";
 const LIVE = "ingvLive";
 /** ISPRA's capable faults shown: `1`. */
 const FAULTS = "ingvFaults";
+/** INGV's seismogenic sources (DISS) shown: `1`. */
+const DISS = "ingvDiss";
 /** The Minimap's zoom relative to the map (`-8` wider, `-3` closer), or `off`. */
 const MINIMAP = "ingvMinimap";
 
-export const URL_PARAMETER_NAMES = [TIME, FROM, TO, MAG, DEPTH, DEPTH_OFF, AREA, COUNTRY, CENTRE, RADIUS, ORDER, LIMIT, BOX, EVENT, LIVE, MINIMAP, FAULTS];
+export const URL_PARAMETER_NAMES = [TIME, FROM, TO, MAG, DEPTH, DEPTH_OFF, AREA, COUNTRY, CENTRE, RADIUS, ORDER, LIMIT, BOX, EVENT, LIVE, MINIMAP, FAULTS, DISS];
 
 /** The Minimap's zoom relative to the map when the plugin opens it; GeoLibre's own is -4. */
 export const DEFAULT_MINIMAP = -6;
@@ -56,6 +58,7 @@ export interface Link {
   liveZoom: boolean | null;
   minimap: Minimap | null;
   faults: boolean;
+  diss: boolean;
 }
 
 /** What a shared link gives: the search, the box or centre it used, the event open, the map view. */
@@ -69,6 +72,7 @@ export interface Shared {
   liveZoom: boolean;
   minimap: Minimap;
   faults: boolean;
+  diss: boolean;
   view: { lon: number; lat: number; zoom: number } | null;
 }
 
@@ -104,7 +108,7 @@ function utcMinute(raw: string): string | null {
  */
 export function linkFrom(params: URLSearchParams, now: Date, errors?: string[]): Link | null {
   const s = defaultSearch(now);
-  const link: Link = { search: s, box: null, eventId: null, liveZoom: null, minimap: null, faults: false };
+  const link: Link = { search: s, box: null, eventId: null, liveZoom: null, minimap: null, faults: false, diss: false };
   let asked = false;
   /** Apply a parameter's value when it parses; a value that does not is left out with a warning. */
   const take = <T>(name: string, parse: (raw: string) => T | null, apply: (value: T) => void) => {
@@ -153,6 +157,7 @@ export function linkFrom(params: URLSearchParams, now: Date, errors?: string[]):
   take(EVENT, positive(true), (v) => (link.eventId = v));
   take(LIVE, oneOf(["0", "1"]), (v) => (link.liveZoom = v === "1"));
   take(FAULTS, oneOf(["0", "1"]), (v) => (link.faults = v === "1"));
+  take(DISS, oneOf(["0", "1"]), (v) => (link.diss = v === "1"));
   take(
     MINIMAP,
     (raw) => (raw === "off" ? raw : raw !== "" && Number(raw) >= -12 && Number(raw) <= 4 ? Number(raw) : null),
@@ -193,6 +198,7 @@ export function shareParams(shared: Shared): URLSearchParams {
   if (shared.eventId) params.set(EVENT, String(shared.eventId));
   if (!shared.liveZoom) params.set(LIVE, "0");
   if (shared.faults) params.set(FAULTS, "1");
+  if (shared.diss) params.set(DISS, "1");
   if (shared.minimap !== DEFAULT_MINIMAP) params.set(MINIMAP, String(shared.minimap));
   return params;
 }

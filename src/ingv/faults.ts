@@ -1,6 +1,7 @@
 import { el, extLink } from "./dom";
 import type { MapLike } from "./host";
 import { tr } from "./i18n";
+import { MapOverlay } from "./overlay";
 
 /**
  * ISPRA's catalogue of capable faults (ITHACA), the faults that can break the
@@ -54,84 +55,42 @@ export async function fetchFaults(signal?: AbortSignal): Promise<FaultCollection
 }
 
 const SOURCE_ID = "ingq-faults";
-const LINES_ID = "ingq-faults-lines";
 /** Wide and invisible: a thin line is hard to click. */
-const HIT_ID = "ingq-faults-hit";
-/** The results' circles, drawn over the faults. */
-const POINTS_ID = "ingq-results-points";
+export const FAULTS_HIT_ID = "ingq-faults-hit";
 
 /** The catalogue's own kinematics, worth showing when it says more than the group: "Normal Oblique SX". */
 const detail = (kinematics: unknown) => typeof kinematics === "string" && !["Normal", "Reverse", "ND", ""].includes(kinematics);
 
 const lineColor = () => ["match", ["get", "kind"], ...FAULT_KINDS.flatMap((k) => [k.id, k.color]), FAULT_KINDS[3].color];
 
-/**
- * The faults drawn on the MapLibre map, under the earthquakes. A click on a
- * fault, away from an earthquake, shows its name, kinematics and page.
- */
-export class FaultsLayer {
-  private popup: HTMLElement | null = null;
-  private readonly onStyleData = () => this.ensure();
-  private readonly onClick = (event: { point: { x: number; y: number } }) => {
-    this.close();
-    if (this.toolActive()) return;
-    const box = [event.point.x, event.point.y];
-    // An earthquake under the pointer wins: its click opens the event.
-    if (this.map.getLayer(POINTS_ID) && this.map.queryRenderedFeatures(box, { layers: [POINTS_ID] }).length) return;
-    const hit = this.map.queryRenderedFeatures(box, { layers: [HIT_ID] })[0];
-    if (hit) this.open(hit.properties, event.point);
-  };
-  private readonly onMove = () => this.close();
+/** A fault's popup: name, kinematics, rank and region, its ITHACA page. */
+function faultPopup(p: Record<string, unknown>) {
+  const page = faultPage(p.url);
+  const rank = p.rank === "Primary" ? tr("faults.primary", "Primary") : p.rank === "Secondary" ? tr("faults.secondary", "Secondary") : tr("faults.ndShort", "n.d.");
+  const kind = FAULT_KINDS.find((k) => k.id === p.kind) ?? FAULT_KINDS[3];
+  return [
+    el("strong", {}, String(p.faultname ?? "")),
+    el("div", {}, el("span", { class: "ingq-fault-line", style: { background: kind.color } }), kind.label() + (detail(p.kinematics) ? ` (${String(p.kinematics)})` : "")),
+    el("div", { class: "ingq-muted" }, `${tr("faults.rank", "Rank")}: ${rank} · ${String(p.regionname ?? "")}`),
+    page ? extLink(page, tr("faults.page", "ITHACA page")) : null,
+  ];
+}
 
-  constructor(
-    private readonly map: MapLike,
-    private readonly data: FaultCollection,
-    private readonly toolActive: () => boolean,
-  ) {
-    map.on("styledata", this.onStyleData);
-    map.on("click", this.onClick);
-    map.on("movestart", this.onMove);
-    this.ensure();
-  }
-
-  private ensure(): void {
-    try {
-      const map = this.map;
-      if (!map.getSource(SOURCE_ID)) map.addSource(SOURCE_ID, { type: "geojson", data: this.data });
-      const before = map.getLayer(POINTS_ID) ? POINTS_ID : undefined;
-      if (!map.getLayer(LINES_ID)) map.addLayer({ id: LINES_ID, type: "line", source: SOURCE_ID, paint: { "line-color": lineColor(), "line-width": 1.6 } }, before);
-      if (!map.getLayer(HIT_ID)) map.addLayer({ id: HIT_ID, type: "line", source: SOURCE_ID, paint: { "line-color": "#000", "line-width": 12, "line-opacity": 0 } }, before);
-    } catch {
-      // Style still loading: the next `styledata` retries.
-    }
-  }
-
-  private open(p: Record<string, unknown>, point: { x: number; y: number }) {
-    const page = faultPage(p.url);
-    const rank = p.rank === "Primary" ? tr("faults.primary", "Primary") : p.rank === "Secondary" ? tr("faults.secondary", "Secondary") : tr("faults.ndShort", "n.d.");
-    const kind = FAULT_KINDS.find((k) => k.id === p.kind) ?? FAULT_KINDS[3];
-    this.popup = el(
-      "div",
-      { class: "ingq-fault-pop", style: { left: `${point.x}px`, top: `${point.y}px` } },
-      el("strong", {}, String(p.faultname ?? "")),
-      el("div", {}, el("span", { class: "ingq-fault-line", style: { background: kind.color } }), kind.label() + (detail(p.kinematics) ? ` (${String(p.kinematics)})` : "")),
-      el("div", { class: "ingq-muted" }, `${tr("faults.rank", "Rank")}: ${rank} · ${String(p.regionname ?? "")}`),
-      page ? extLink(page, tr("faults.page", "ITHACA page")) : null,
+/** ISPRA's faults on the map, under the earthquakes, coloured by kinematics. */
+export class FaultsLayer extends MapOverlay {
+  constructor(map: MapLike, data: FaultCollection, toolActive: () => boolean) {
+    super(
+      map,
+      {
+        sources: { [SOURCE_ID]: data },
+        layers: [
+          { id: "ingq-faults-lines", type: "line", source: SOURCE_ID, paint: { "line-color": lineColor(), "line-width": 1.6 } },
+          { id: FAULTS_HIT_ID, type: "line", source: SOURCE_ID, paint: { "line-color": "#000", "line-width": 12, "line-opacity": 0 } },
+        ],
+        hitLayers: [FAULTS_HIT_ID],
+        popup: faultPopup,
+      },
+      toolActive,
     );
-    this.map.getContainer().append(this.popup);
-  }
-
-  private close() {
-    this.popup?.remove();
-    this.popup = null;
-  }
-
-  dispose(): void {
-    this.close();
-    this.map.off("styledata", this.onStyleData);
-    this.map.off("click", this.onClick);
-    this.map.off("movestart", this.onMove);
-    for (const id of [HIT_ID, LINES_ID]) if (this.map.getLayer(id)) this.map.removeLayer(id);
-    if (this.map.getSource(SOURCE_ID)) this.map.removeSource(SOURCE_ID);
   }
 }

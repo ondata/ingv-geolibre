@@ -12,6 +12,7 @@ import { shareButton } from "./share";
 import { barWhen, percent } from "./charts";
 import { barStart } from "./stats";
 import { FAULT_KINDS } from "./faults";
+import { DISS_DOI, DISS_KINDS, DISS_PAGE } from "./diss";
 
 const ORDERS: { id: OrderBy; label: () => string }[] = [
   { id: "time", label: () => tr("order.time", "Newest first") },
@@ -19,6 +20,26 @@ const ORDERS: { id: OrderBy; label: () => string }[] = [
   { id: "magnitude", label: () => tr("order.magnitude", "Magnitude, largest first") },
   { id: "magnitude-asc", label: () => tr("order.magnitudeAsc", "Magnitude, smallest first") },
 ];
+
+/** A toggle of a reference layer with its colour key, shown while the layer is on. */
+function overlayToggle(title: string, hint: string, kinds: readonly { color: string; label: () => string }[], onToggle: (on: boolean) => void, swatch: "line" | "fill" = "line") {
+  const check = el("input", { type: "checkbox", class: "ingq-check", onchange: () => onToggle(check.checked) });
+  const note = el("span", { class: "ingq-faint" });
+  const key = el(
+    "div",
+    { class: "ingq-legend" },
+    ...kinds.map((k) => el("span", { class: "ingq-fault-key" }, el("span", { class: swatch === "fill" ? "ingq-fault-fill" : "ingq-fault-line", style: { background: k.color } }), k.label())),
+  );
+  const element = el("div", { class: "ingq-group ingq-tight" }, el("label", { class: "ingq-live", title: hint }, check, el("span", {}, title), note), key);
+  return {
+    element,
+    show(state: "off" | "loading" | "on" | "error") {
+      check.checked = state !== "off";
+      key.hidden = state !== "on";
+      note.textContent = state === "loading" ? tr("faults.loading", "loading…") : state === "error" ? tr("faults.failed", "not available") : "";
+    },
+  };
+}
 
 const sectionTitle = (text: string) => el("div", { class: "ingq-label" }, text);
 const REPO_URL = "https://github.com/ondata/ingv-geolibre";
@@ -61,10 +82,12 @@ function footer(ctl: Controller): { element: HTMLElement; showAbout: () => void 
       ...row(tr("about.feltReports", "Felt reports"), extLink("https://www.hsit.it", "hsit.it")),
       ...row(tr("about.licence", "Licence"), extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0")),
       ...row(tr("about.countries", "Countries"), extLink("https://www.naturalearthdata.com", "Natural Earth 1:110m")),
+      ...row(tr("about.diss", "Seismogenic sources"), el("span", {}, extLink(DISS_PAGE, "INGV, DISS 3.3.1"), ", ", extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"))),
       ...row(tr("about.faults", "Capable faults"), el("span", {}, extLink("https://sgi.isprambiente.it/ithacaweb/", "ISPRA, ITHACA"), ", ", extLink("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0"))),
     ),
     // Citation from DataCite for the DOI of ISIDe, the INGV catalogue the event service serves.
     el("p", { class: "ingq-muted ingq-small-text" }, tr("about.citeAs", "Cite as:") + " ISIDe Working Group (2007). Italian Seismological Instrumental and Parametric Database (ISIDe). INGV. ", extLink("https://doi.org/10.13127/ISIDE", "doi:10.13127/ISIDE")),
+    el("p", { class: "ingq-muted ingq-small-text" }, tr("about.citeAs", "Cite as:") + " DISS Working Group (2025). Database of Individual Seismogenic Sources (DISS), Version 3.3.1. INGV. ", extLink(DISS_DOI, "doi:10.13127/diss3.3.1")),
     el("div", { class: "ingq-about-foot ingq-muted" }, tr("about.repo", "Plugin source and issues:") + " ", extLink(REPO_URL, "GitHub")),
   );
   const info = el("button", { type: "button", class: "ingq-info", title: tr("about.title", "About the data"), onclick: () => toggle() }, "i");
@@ -284,20 +307,21 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
       ),
     ),
   );
-  // ISPRA's capable faults: a toggle, and the colours of their kinematics while shown.
-  const faultsCheck = el("input", { type: "checkbox", class: "ingq-check", onchange: () => void ctl.setFaults(faultsCheck.checked) });
-  const faultsNote = el("span", { class: "ingq-faint" });
-  const faultsKey = el(
-    "div",
-    { class: "ingq-legend" },
-    ...FAULT_KINDS.map((k) => el("span", { class: "ingq-fault-key" }, el("span", { class: "ingq-fault-line", style: { background: k.color } }), k.label())),
+  // Reference layers under the earthquakes: ISPRA's capable faults, INGV's seismogenic sources.
+  const faults = overlayToggle(
+    tr("faults.title", "Capable faults (ISPRA)"),
+    tr("faults.hint", "The faults that can break the surface, from ISPRA's ITHACA catalogue; click one for its page"),
+    FAULT_KINDS,
+    (on) => void ctl.setFaults(on),
   );
-  const faults = el(
-    "div",
-    { class: "ingq-group ingq-tight" },
-    el("label", { class: "ingq-live", title: tr("faults.hint", "The faults that can break the surface, from ISPRA's ITHACA catalogue; click one for its page") }, faultsCheck, el("span", {}, tr("faults.title", "Capable faults (ISPRA)")), faultsNote),
-    faultsKey,
+  const diss = overlayToggle(
+    tr("diss.title", "Seismogenic sources (INGV DISS)"),
+    tr("diss.hint", "The potential sources of earthquakes above M 5.5, from INGV's DISS 3.3.1; click one for its page"),
+    DISS_KINDS,
+    (on) => void ctl.setDiss(on),
+    "fill",
   );
+  const overlays = el("div", { class: "ingq-group ingq-tight" }, faults.element, diss.element);
   const depthButtons = [...legend.querySelectorAll<HTMLButtonElement>(".ingq-depth")];
   const searchButton = el("button", { type: "button", class: "ingq-primary ingq-search-btn", onclick: () => void ctl.run() }, tr("search", "Search"));
   const show = el("input", { type: "checkbox", class: "ingq-check", onchange: () => ctl.setShowOnMap(show.checked) });
@@ -387,10 +411,10 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
       }),
     );
   }
-  for (const [node, where] of [[time, "both"], [tabs, "both"], [result, "results"], [list, "results"], [legend, "filters"], [faults, "filters"], [liveRow, "filters"], [magnitude, "filters"], [area, "filters"], [more, "filters"]] as const)
+  for (const [node, where] of [[time, "both"], [tabs, "both"], [result, "results"], [list, "results"], [legend, "filters"], [overlays, "filters"], [liveRow, "filters"], [magnitude, "filters"], [area, "filters"], [more, "filters"]] as const)
     node.dataset.tab = where;
 
-  const element = el("div", { class: "ingq-search" }, liveRow, time, tabs, magnitude, area, result, legend, faults, list, more);
+  const element = el("div", { class: "ingq-search" }, liveRow, time, tabs, magnitude, area, result, legend, overlays, list, more);
 
   // Click on the map moves the centre of "Around".
   const map = ctl.app.getMap?.();
@@ -457,9 +481,8 @@ function buildSearch(ctl: Controller, showAbout: () => void) {
     message.hidden = !message.textContent;
     live.checked = st.liveZoom;
     show.checked = st.showOnMap;
-    faultsCheck.checked = st.faults !== "off";
-    faultsKey.hidden = st.faults !== "on";
-    faultsNote.textContent = st.faults === "loading" ? tr("faults.loading", "loading…") : st.faults === "error" ? tr("faults.failed", "not available") : "";
+    faults.show(st.faults);
+    diss.show(st.diss);
     showRow.hidden = st.status !== "done" || !features.length;
     zoomLink.hidden = st.liveZoom || st.status !== "done" || !features.length;
     tableLink.hidden = (st.tableOpen && st.resultsTab === "table") || !features.length;
