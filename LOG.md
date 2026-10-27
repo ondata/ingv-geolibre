@@ -2,6 +2,7 @@
 
 ## 2026-10-27
 
+- **GeoLibre 3.5.1** (released 00:35 UTC, told by the openrndt-geolibre session, checked on the release): plugin stylesheets apply again on Desktop (opengeos/GeoLibre#3212, fixes #3210); README updated. New `getMapCrs()`/`onMapCrsChange()` (#3214): our results are a GeoJSON source on MapLibre, not WMS; not checked how they look on a map drawn in another CRS.
 - **0.4.0 released** with the charts and the 3.5.0 address (zip sha256 `576ce8c7…`, checked on the download): https://github.com/ondata/ingv-geolibre/releases/tag/v0.4.0. Dev copy 0.4.0 on Desktop. Registry: branch `ondata:update-ingv-geolibre-0.4.0` pushed (cf7f0c8), `npm run validate` passes; PR opengeos/geolibre-plugins#128. opengeos/GeoLibre#3210 closed on 2026-10-25 but not in a GeoLibre release yet (latest 3.5.0).
 
 ## 2026-10-26

@@ -58,7 +58,7 @@ For example, the earthquakes of magnitude 4.5 and above of the last 30 days in G
 
 - **Coverage**: the catalogue is detailed for Italy and its seas, down to the smallest events. Elsewhere INGV lists only the stronger earthquakes. Over the 30 days before 23 October 2026 the smallest event listed was M 0.1 in Italy, M 4.5 in the rest of Europe and the Mediterranean, M 5.5 in the rest of the world.
 - **Web or Desktop**: the event search works in both. The ShakeMap layers (contours and stations as GeoJSON) are served without CORS headers, so only GeoLibre Desktop can add them to the map; the ShakeMap images show in both.
-- **GeoLibre Desktop 3.5.0**: the panel shows without its styles, as do those of every external plugin; the search works. The cause is in GeoLibre and is reported in [opengeos/GeoLibre#3210](https://github.com/opengeos/GeoLibre/issues/3210).
+- **GeoLibre Desktop 3.5.0**: the panel shows without its styles, as do those of every external plugin; the search works. Fixed in GeoLibre 3.5.1 ([opengeos/GeoLibre#3210](https://github.com/opengeos/GeoLibre/issues/3210)): use 3.5.1 or later on Desktop.
 
 ## Data and citation
 
